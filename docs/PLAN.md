@@ -340,7 +340,8 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
 | Analisa & plan | ✅ selesai (19 Nov 2026) |
 | 0 — Design system & DESIGN.md | ✅ selesai & disetujui user (19 Nov 2026): palet (High terang = terakota `#C26159`), alur dashboard sadar-cakupan, penggantian primitif UI prototipe dengan shadcn di Fase 1 |
 | 1 — Scaffold | ✅ selesai (19 Nov 2026): verifikasi opus "lolos bersyarat", temuan minor sudah diperbaiki |
-| 2 — Skema DB, RLS, allowlist, seed | ⏭ berikutnya: jalankan `/fase-2` di sesi baru (butuh Docker untuk Supabase lokal) |
+| 2 — Skema DB, RLS, allowlist, seed | ✅ selesai (19 Nov 2026): verifikasi opus "lolos bersyarat", 2 temuan P2 sudah ditutup |
+| 3 — Auth Google + proxy + guard role | ⏭ berikutnya: jalankan `/fase-3` di sesi baru |
 
 ### Hasil Fase 0
 - `DESIGN.md` final: token light/dark lolos validator palet `dataviz` (exit 0 kedua mode) dan 116/116 pasangan kontras AA; §12 berisi keputusan dari kritik prototipe.
@@ -366,3 +367,33 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
   - CSP masih `'unsafe-inline'` untuk script (dievaluasi ke nonce di Fase 9).
   - `NEXT_PUBLIC_SUPABASE_URL` wajib di-set saat build/start agar masuk CSP.
   - Port 3000 di mesin dev dipakai app lain, sehingga e2e memakai 3100. `site_url` Supabase lokal perlu disesuaikan di Fase 2/3.
+
+### Hasil Fase 2
+- **Migrasi** (`supabase/migrations/20261119000100…0600`): enum, 12 tabel, fungsi skor, keamanan (helper, RLS, hook, audit, sinkron profil), view dan RPC, serta penjaga kolom aktor.
+  - Enum `utilization_status` memakai snake_case (`digunakan_sendiri`, `disewakan_kerja_sama`, `idle_kosong`, `digunakan_pihak_lain`, `lainnya`). Label Indonesia diambil dari `utilization_label()`.
+- **Skor (satu sumber kebenaran):** `compute_score(smallint[6], version)`, `category_for(score, override, version)` (null = belum dinilai), `interval_months`, `active_params_version()`.
+  - Trigger `assessments_compute` mengisi `total_score`, `category`, dan `is_complete`. Bila `params_version` kosong, trigger memakai versi aktif.
+  - Paritas DB ↔ TS identik untuk 15.625 kombinasi. Pembulatan TS diperbaiki dengan `toPrecision(12)` agar sama dengan `round()` numeric.
+- **Recalc:** `recalculate_with_active_params(dry_run)` (admin) hanya memperbarui penilaian *terakhir* tiap aset yang versinya berbeda. Riwayat lama tetap pada versinya, dan nilai lama tersimpan di `audit_log`.
+- **Keamanan:**
+  - `is_allowed()`, `has_role()`, dan `current_app_role()` bersifat `security definer` dengan `search_path=''`. Role hanya disimpan di `allowed_emails` (`profiles` tidak punya kolom role).
+  - RLS aktif di 12/12 tabel dengan policy per perintah `to authenticated` dan pembungkus `(select …)`.
+  - Anon tidak punya privilege apa pun. EXECUTE default dicabut dari PUBLIC.
+  - Hook `hook_before_user_created` terdaftar di `config.toml` dan menolak email non-allowlist dengan 403.
+  - Kolom aktor (`created_by`, `uploaded_by`, `added_by`) dipaksa dari `auth.uid()` lewat trigger `stamp_actor`. Bobot tidak boleh negatif.
+- **View/RPC:**
+  - `v_asset_latest` memakai LATERAL + LIMIT 1, dengan `days_until_due`. Status "segera" (≤30 hari) dihitung di `dashboard_summary`.
+  - `v_data_quality_issues` menghasilkan kode yang sama dengan `WarnKey`.
+  - `dashboard_summary(filters)` mengecualikan placeholder dari agregat nilai.
+  - `import_commit` baru berupa kerangka (Fase 7).
+- **Seed:**
+  - `scripts/gen-seed.ts` (`bun run db:seed-gen`, env `SEED_ADMIN_EMAIL`, default `admin@example.com`) menghasilkan `supabase/seed.sql` yang idempoten.
+  - Angka cocok dengan §2.3: 136 aset, Rp143,86 M non-placeholder, 44/39 placeholder, 13 idle (Rp42,4 M), 3 hak lewat + 1 < 12 bulan, 123 aset `needs_review`.
+- **Test:**
+  - pgTAP 93 test di 7 file (`supabase/tests/`: scoring, parity hasil generate, rls, hook, seed, audit, actor).
+  - Vitest 46 test. Parity memakai `lib/scoring/fixtures.json` dan `scripts/gen-parity-sql.ts`.
+- **Gate:** `db reset`, `test db`, `db lint`, dan `db advisors` (0 temuan) bersih; `typecheck`, `lint`, `test`, dan `build` hijau. `lib/supabase/database.types.ts` di-generate dan generic `Database` sudah tersambung.
+- **Catatan lanjutan:**
+  - Email admin asli belum ditentukan; isi lewat `SEED_ADMIN_EMAIL` sebelum seed di production.
+  - Penilaian seed bertanggal 2026-11-18.
+  - Docker memakai Colima. Bila `docker pull` macet, jalankan `colima restart`.

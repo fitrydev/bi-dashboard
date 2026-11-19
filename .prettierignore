@@ -9,3 +9,4 @@ playwright-report/
 test-results/
 DESIGN.md
 CLAUDE.md
+lib/supabase/database.types.ts

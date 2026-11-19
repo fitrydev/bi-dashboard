@@ -1,6 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 /** Client Supabase untuk Client Component. Melempar error jika env belum diset. */
 export function createClient() {
@@ -11,5 +12,5 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(env.url, env.key);
+  return createBrowserClient<Database>(env.url, env.key);
 }

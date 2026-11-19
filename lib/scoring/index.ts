@@ -22,7 +22,8 @@ export function computeScore(
     if (v == null) return null;
     sum += v * i.weight;
   }
-  return Math.round((sum / 5) * 100 * 10) / 10;
+  // toPrecision(12) membuang galat float (mis. 268.99999999) agar half-up identik dengan round() numeric Postgres.
+  return Math.round(Number(((sum / 5) * 100 * 10).toPrecision(12))) / 10;
 }
 
 export function categoryFor(

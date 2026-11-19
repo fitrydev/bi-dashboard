@@ -25,6 +25,11 @@ describe("computeScore", () => {
     expect(s).toBe(47);
     expect(categoryFor(s)).toBe("medium");
   });
+  it("tie .x5 dibulatkan half-up seperti round() numeric Postgres (26,95 → 27,0)", () => {
+    const w = [0.2025, 0.2475, 0.15, 0.15, 0.1, 0.15];
+    const ind = DEFAULT_PARAMS.indicators.map((i, k) => ({ ...i, weight: w[k] }));
+    expect(computeScore(S(1, 2, 1, 1, 2, 1), ind)).toBe(27);
+  });
   it("skor maksimum dan minimum", () => {
     expect(computeScore(S(5, 5, 5, 5, 5, 5))).toBe(100);
     expect(computeScore(S(1, 1, 1, 1, 1, 1))).toBe(20);
