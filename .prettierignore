@@ -1,0 +1,11 @@
+design/
+source/
+docs/
+.next/
+node_modules/
+bun.lock
+supabase/.temp
+playwright-report/
+test-results/
+DESIGN.md
+CLAUDE.md

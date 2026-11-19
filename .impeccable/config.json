@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "fraunces",
+        "createdAt": "2026-11-19T03:54:33.889Z",
+        "reason": "DESIGN.md §2/§10 (disetujui user di Fase 0, PLAN §10): Fraunces khusus judul, arah Buku Besar Risiko"
+      }
+    ]
+  }
+}
