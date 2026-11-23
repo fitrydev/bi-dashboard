@@ -53,7 +53,7 @@ export function TopValue({ rows }: { rows: AssetRow[] }) {
             <Link
               href={asetDetail(r.code)}
               title={r.name}
-              className="link text-body sm:block sm:truncate"
+              className="link inline-flex min-h-11 items-center text-body sm:block sm:min-h-0 sm:truncate"
             >
               {r.name}
             </Link>
@@ -78,7 +78,7 @@ export function TopValue({ rows }: { rows: AssetRow[] }) {
               <Link
                 href={asetDetail(r.code)}
                 aria-label={`${r.name}: ${formatRupiahEksak(r.value ?? 0)}, ${RISK_LABEL[r.level]}. Buka detail`}
-                className="flex min-h-8 w-full items-center gap-2"
+                className="flex min-h-11 w-full items-center gap-2 sm:min-h-8"
               >
                 <span
                   className="h-5 rounded-r-md bg-ink-muted/40"

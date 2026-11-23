@@ -84,3 +84,7 @@ const KATA = [
 export const kataBilangan = (n: number): string =>
   Number.isInteger(n) && n >= 0 && n <= 10 ? KATA[n] : nf0.format(n);
 export const kapital = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** Nama wilayah dari DB (huruf besar) ke judul: "JAWA BARAT" → "Jawa Barat", "DKI JAKARTA" → "DKI Jakarta". */
+export const formatWilayah = (s: string): string =>
+  s.toLowerCase().replace(/\p{L}+/gu, (w) => (w === "dki" ? "DKI" : w[0].toUpperCase() + w.slice(1)));

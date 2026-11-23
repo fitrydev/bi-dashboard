@@ -343,7 +343,8 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
 | 2 — Skema DB, RLS, allowlist, seed | ✅ selesai (19 Nov 2026): verifikasi opus "lolos bersyarat", 2 temuan P2 sudah ditutup |
 | 3 — Auth Google + proxy + guard role | ✅ selesai: login Google disimulasikan (kredensial belum ada), verifikasi opus, 1 temuan LOW sudah diperbaiki |
 | 4 — Design system: token, komponen risk, chart primitives | ✅ selesai (23 Nov 2026): review visual opus "lolos bersyarat", semua P0/P1 diperbaiki |
-| 5 — Dashboard + RPC summary | ⏭ berikutnya: jalankan `/fase-5` di sesi baru |
+| 5 — Dashboard + RPC summary | ✅ selesai (23 Nov 2026): review visual opus tanpa P0, semua P1 diperbaiki |
+| 6 — Aset, penilaian, monitoring, jadwal | ⏭ berikutnya: jalankan `/fase-6` di sesi baru |
 
 ### Hasil Fase 0
 - `DESIGN.md` final: token light/dark lolos validator palet `dataviz` (exit 0 kedua mode) dan 116/116 pasangan kontras AA; §12 berisi keputusan dari kritik prototipe.
@@ -444,3 +445,32 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
   2. Teks rubrik: diteruskan sebagai prop `rubric` dari halaman, atau masuk ke `ScoringParams`.
   3. `IndicatorMeter` memakai bar penuh netral, bukan kotak 12px seperti DESIGN §6.3.
   4. Skor disembunyikan di list mobile bila aset belum dinilai, agar "Belum dinilai" tidak tampil dua kali.
+
+### Hasil Fase 5
+- **Keputusan Fase 4 (disetujui user 23 Nov 2026):** High gelap `#B15604` diterima; rubrik tetap lewat prop `rubric`; `IndicatorMeter` tetap memakai bar penuh (DESIGN §6.3 perlu diselaraskan); skor disembunyikan di list mobile bila aset belum dinilai.
+- **RPC:** migrasi `20261123000100_dashboard_summary_v2.sql` (`create or replace`, hanya menambah key; tetap `stable`/`security invoker`/`search_path=''`, execute hanya untuk authenticated). Key baru:
+  - `periods`, `trend[]` (per bulan; memakai penilaian terakhir tiap aset sampai akhir bulan);
+  - `active_weights`, `by_type[].idle_count/idle_value`, `by_region[].{tanah,bangunan,gabungan}_value`, `matrix.rows[].value`.
+- **pgTAP:** 113 test (+20 di `dashboard_summary.test.sql`): 136 aset (D8 diperbaiki), Rp143,86 M, placeholder 44/39, idle 13 / Rp42,4 M, hak 3 lewat + 1 < 12 bln, 251116 = 47,0 Medium, periods 1, filter wilayah, anon ditolak.
+- **Loader:** `lib/asset-row.ts` (builder `AssetRow` dipindah dari galeri; `fromLatestView`), `lib/dashboard/{filters,derive,load}.ts`. `load.ts` server-only dengan 3 query paralel. Filter URL: `wilayah`, `jenis`, `kategori`, `pemanfaatan`. `Asset.type` sekarang mencakup `Gabungan`.
+- **Halaman `/dashboard`:**
+  - Section A–G dengan data DB. KPI diambil dari ringkasan RPC.
+  - Coverage < 20%: A dan B jadi lead, ada satu CTA, C/D diganti satu baris status (DESIGN §12.1), dan E berupa heatmap aset yang sudah dinilai dengan tag "Sementara".
+  - Coverage tinggi: A jadi bar tipis, C jadi lead, G naik ke atas.
+  - H hanya tampil bila `periods ≥ 2`.
+  - Skeleton lewat Suspense; error inline memakai `catchError` + "Coba lagi"; ada empty state untuk filter kosong; toggle tabel memakai `ChartFrame`.
+- **Test:** Vitest 85, e2e 26 (`e2e/dashboard.spec.ts`: angka kunci, filter Jawa Barat = 12 aset, H tidak tampil, tanpa scroll horizontal dan tanpa galat konsol, 1440/375 × terang/gelap). Screenshot di `docs/screenshots/fase-5/` (+ `review/`).
+- **Review visual (opus):** tidak ada P0. P1 yang diperbaiki: judul aneh saat hasil nol/placeholder, kurung kosong di `RightTimeline`, target sentuh < 44px di `TopValue`/`RegionTable`. axe tanpa pelanggaran, kontras 104/104.
+- **Gate:** `db reset`, test db 113, typecheck, lint, test 85, contrast 104/104, build, e2e 26/26 hijau.
+- **Disetujui user (23 Nov 2026):** C/D diganti baris status saat coverage < 20% (DESIGN §12.1), dua ponytail di bawah, dan link KPI/CTA menunggu Fase 6.
+- **Ponytail:** satu loader per request (`React.cache`), jadi galat query menampilkan satu blok "Coba lagi" untuk seluruh body. Filter mobile ditumpuk, tanpa bottom sheet.
+- **P2 terbuka:**
+  - Saat galat, header dan body masing-masing punya "Coba lagi" dan tidak ada h1.
+  - Wilayah tak dikenal di URL membuat select kosong.
+  - Wadah scroll `RightTimeline` di mobile belum punya `role=region`/`tabindex`.
+  - `TopValue` punya dua link per baris.
+  - Catatan KPI bisa berbunyi "Ditambah 0 …".
+  - Bar "Menuju 28 aset" memakai basis 136.
+  - Warning prerender `Date.now()` (sesi Supabase / UserMenu) masih muncul.
+- **Lanjutan Fase 6:** link KPI (`warn=`, `pemanfaatan=`, `dinilai=`) dan CTA `/aset/[code]/nilai` menunggu halaman Aset dan form penilaian.
+

@@ -48,7 +48,7 @@ export function RightTimeline({ rows, today }: { rows: AssetRow[]; today: Date }
       x: p(new Date(rs[0].right_expiry_date!).getTime()),
     }));
   }, [lands, t0, t1]);
-  const summary = `Masa berlaku hak ${formatAngka(lands.length)} aset tanah. ${formatAngka(expired.length)} sudah lewat (${expired.map((r) => `${r.name}, ${formatTanggal(r.right_expiry_date)}`).join("; ")}), ${formatAngka(expiringN)} berakhir kurang dari 12 bulan, sisanya masih berlaku${groups.length ? `; hak terjauh berakhir ${Math.max(...groups.map((g) => g.y))}` : ""}.`;
+  const summary = `Masa berlaku hak ${formatAngka(lands.length)} aset tanah. ${formatAngka(expired.length)} sudah lewat${expired.length ? ` (${expired.map((r) => `${r.name}, ${formatTanggal(r.right_expiry_date)}`).join("; ")})` : ""}, ${formatAngka(expiringN)} berakhir kurang dari 12 bulan, sisanya masih berlaku${groups.length ? `; hak terjauh berakhir ${Math.max(...groups.map((g) => g.y))}` : ""}.`;
   const table = (
     <LedgerTable
       caption="Masa berlaku hak per aset tanah"

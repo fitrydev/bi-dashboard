@@ -13,7 +13,7 @@ export interface AssetFlags {
 export interface Asset {
   code: string;
   name: string;
-  type: "Tanah" | "Bangunan";
+  type: "Tanah" | "Bangunan" | "Gabungan";
   region: string;
   address: string | null;
   land_area_m2: number | null;

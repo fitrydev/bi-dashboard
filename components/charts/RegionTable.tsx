@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { isIdle, sumValue } from "@/lib/aggregate";
-import { formatAngka, formatPersen, formatRupiahEksak, formatRupiahRingkas } from "@/lib/format";
+import { formatAngka, formatPersen, formatRupiahEksak, formatRupiahRingkas, formatWilayah as title } from "@/lib/format";
 import { asetList } from "@/lib/routes";
 import type { AssetRow } from "@/lib/types";
 
 const TYPES: AssetRow["type"][] = ["Bangunan", "Tanah"];
-const title = (s: string) =>
-  s === "DKI JAKARTA"
-    ? "DKI Jakarta"
-    : s.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase());
 
 function Meter({ frac, idleFrac, label }: { frac: number; idleFrac: number; label: string }) {
   return (
@@ -105,9 +101,9 @@ export function RegionTable({ rows, regions }: { rows: AssetRow[]; regions?: str
           return (
             <li
               key={g.k}
-              className={`border-b py-3 ${g.k === "total" ? "border-rule-strong bg-surface-sunken px-2 font-medium" : "border-rule"}`}
+              className={`border-b py-2 ${g.k === "total" ? "border-rule-strong bg-surface-sunken px-2 font-medium" : "border-rule"}`}
             >
-              <Link className="link" href={asetList(q(g))}>
+              <Link className="link inline-flex min-h-11 items-center" href={asetList(q(g))}>
                 {label(g)}
               </Link>
               <dl className="mt-1 grid grid-cols-3 gap-2 text-body">
@@ -123,7 +119,7 @@ export function RegionTable({ rows, regions }: { rows: AssetRow[]; regions?: str
                   <dt className="text-label text-ink-muted">Idle</dt>
                   <dd className="tabular-nums">
                     {iv ? (
-                      <Link className="link" href={asetList({ ...q(g), pakai: "idle" })}>
+                      <Link className="link inline-flex min-h-11 items-center" href={asetList({ ...q(g), pakai: "idle" })}>
                         {formatRupiahRingkas(iv)}
                       </Link>
                     ) : (

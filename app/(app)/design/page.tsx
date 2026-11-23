@@ -21,6 +21,7 @@ import { formatAngka, formatRupiahEksak, formatSkor } from "@/lib/format";
 import { DEFAULT_PARAMS, LEVELS, RISK_LABEL, SHORT_LABEL, dueOf, type IndicatorKey, type RiskLevel } from "@/lib/scoring";
 import type { WarnKey } from "@/lib/scoring";
 import type { Asset, AssetRow, Assessment } from "@/lib/types";
+import { toAssetRow } from "@/lib/asset-row";
 import data from "@/design/data/assets.json";
 
 export const metadata: Metadata = {
@@ -28,34 +29,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Data aset asli Excel -> AssetRow (belum ada helper di lib; pola sama dengan design/prototype/src/lib/data.ts).
-const warningsOf = (a: Asset): WarnKey[] =>
-  (
-    [
-      [a.flags.value_placeholder, "nilai-placeholder"],
-      [a.flags.area_placeholder, "luas-placeholder"],
-      [a.flags.right_expired, "hak-kedaluwarsa"],
-      [a.flags.right_expiring_12m, "hak-berakhir"],
-      [a.flags.monitored_in_future, "tgl-masa-depan"],
-      [a.utilization_needs_review, "perlu-review"],
-      [a.flags.address_missing, "alamat-kosong"],
-    ] as [boolean, WarnKey][]
-  )
-    .filter(([on]) => on)
-    .map(([, k]) => k);
-
 const assessments = new Map((data.assessments as unknown as Assessment[]).map((a) => [a.asset_code, a]));
-const rows: AssetRow[] = (data.assets as unknown as Asset[]).map((a) => {
-  const as = assessments.get(a.code) ?? null;
-  return {
-    ...a,
-    assessment: as,
-    score: as?.total_score ?? null,
-    level: as ? as.category : "unrated",
-    warnings: warningsOf(a),
-    value: a.book_value != null && a.book_value > 1 ? a.book_value : null,
-  };
-});
+const rows: AssetRow[] = (data.assets as unknown as Asset[]).map((a) => toAssetRow(a, assessments.get(a.code) ?? null));
 
 const rubric: Rubric = Object.fromEntries(
   Object.entries(data.criteria).map(([k, v]) => [k, [1, 2, 3, 4, 5].map((n) => (v as Record<string, string>)[n])]),
