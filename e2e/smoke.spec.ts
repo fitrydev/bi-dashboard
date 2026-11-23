@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./session";
 
 test("login menampilkan judul dan tombol Google", async ({ page }) => {
   await page.goto("/login");
@@ -7,7 +8,8 @@ test("login menampilkan judul dan tombol Google", async ({ page }) => {
 });
 
 for (const path of ["/login", "/dashboard"]) {
-  test(`tanpa scroll horizontal di ${path}`, async ({ page }) => {
+  test(`tanpa scroll horizontal di ${path}`, async ({ page, context, baseURL }) => {
+    if (path === "/dashboard") await loginAs(context, "admin@example.com", baseURL!);
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(
@@ -17,7 +19,8 @@ for (const path of ["/login", "/dashboard"]) {
   });
 }
 
-test("tanpa error console di /dashboard", async ({ page }) => {
+test("tanpa error console di /dashboard", async ({ page, context, baseURL }) => {
+  await loginAs(context, "admin@example.com", baseURL!);
   const errors: string[] = [];
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(e.message));

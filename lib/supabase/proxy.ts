@@ -39,11 +39,41 @@ export async function updateSession(request: NextRequest) {
   });
 
   // Jangan taruh kode di antara pembuatan client dan getClaims(): sesi bisa ter-refresh di sini.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const hasSession = !!data?.claims;
+  const { pathname, search } = request.nextUrl;
 
-  // Fase 3: redirect ke /login untuk user tanpa sesi di route yang dilindungi,
-  // dan enforcement allowlist (tabel allowed_emails). Belum di-redirect di Fase 1
-  // supaya shell bisa dilihat tanpa Supabase.
+  // Allowlist TIDAK dicek di sini (biaya RPC per request, termasuk prefetch):
+  // ditegakkan oleh RLS + app/(app)/layout.tsx (lib/auth/allowlist.ts).
+  if (hasSession && pathname === "/login")
+    return redirectWithCookies(request, "/dashboard", supabaseResponse);
+  if (!hasSession && !isPublic(pathname)) {
+    return redirectWithCookies(
+      request,
+      `/login?next=${encodeURIComponent(pathname + search)}`,
+      supabaseResponse,
+    );
+  }
 
   return supabaseResponse;
+}
+
+function isPublic(pathname: string) {
+  return (
+    pathname === "/login" ||
+    pathname === "/akses-ditolak" ||
+    pathname === "/auth/callback" ||
+    pathname === "/auth/keluar"
+  );
+}
+
+/** Redirect yang tetap membawa cookie sesi + header no-cache dari supabaseResponse. */
+function redirectWithCookies(request: NextRequest, to: string, from: NextResponse) {
+  const res = NextResponse.redirect(new URL(to, request.url));
+  from.cookies.getAll().forEach((c) => res.cookies.set(c));
+  for (const h of ["cache-control", "expires", "pragma"]) {
+    const v = from.headers.get(h);
+    if (v) res.headers.set(h, v);
+  }
+  return res;
 }

@@ -7,9 +7,11 @@ import {
   SettingsIcon,
   SquarePenIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { NavLink } from "@/components/shell/NavLink";
+import { UserMenu } from "@/components/shell/UserMenu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AllowlistGate } from "@/lib/auth/allowlist";
 
 const ic = { "aria-hidden": true, strokeWidth: 1.5 } as const;
 
@@ -84,14 +86,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </ul>
         </nav>
         <div className="flex items-center justify-between gap-2 border-t border-rule px-4 py-3">
-          <span className="text-label text-ink-subtle">Belum masuk</span>
+          <Suspense fallback={null}>
+            <UserMenu />
+          </Suspense>
           <ThemeToggle />
         </div>
       </aside>
 
       <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-rule bg-surface px-4 lg:hidden">
         <span className="font-serif text-[16px] font-semibold text-ink">Buku Besar Risiko</span>
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <Suspense fallback={null}>
+            <UserMenu />
+          </Suspense>
+          <ThemeToggle />
+        </div>
       </header>
 
       <main
@@ -99,7 +108,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         tabIndex={-1}
         className="mx-auto w-full max-w-6xl px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] outline-none sm:px-6 lg:px-8 lg:py-8 lg:pb-8"
       >
-        {children}
+        <Suspense fallback={null}>
+          <AllowlistGate>{children}</AllowlistGate>
+        </Suspense>
       </main>
 
       <nav

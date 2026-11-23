@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
-export function LoginButton({ configured }: { configured: boolean }) {
+export function LoginButton({ configured, next }: { configured: boolean; next?: string }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -13,7 +13,7 @@ export function LoginButton({ configured }: { configured: boolean }) {
     setFailed(false);
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
+      options: { redirectTo: `${location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}` },
     });
     if (error) {
       setFailed(true);

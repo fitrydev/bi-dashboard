@@ -20,6 +20,14 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   if (!getSupabaseEnv()) return NextResponse.redirect(`${origin}/login`);
 
+  // Hook before_user_created menolak (403) -> Supabase redirect ke sini dengan ?error=...&error_code=...
+  // ponytail: format error_code/description tidak dijamin stabil; dicocokkan longgar (kode hook, 403, atau pesan hook kita).
+  if (searchParams.has("error") || searchParams.has("error_code")) {
+    const info = `${searchParams.get("error_code") ?? ""} ${searchParams.get("error_description") ?? ""}`;
+    const denied = /hook|403|tidak terdaftar|not.?allowed/i.test(info);
+    return NextResponse.redirect(`${origin}/login?galat=${denied ? "ditolak" : "auth"}`);
+  }
+
   const code = searchParams.get("code");
   const next = safeNext(searchParams.get("next"), origin);
   if (code) {

@@ -1,11 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
 
+try {
+  process.loadEnvFile(".env.local"); // kunci Supabase lokal untuk loginAs
+} catch {}
+
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "e2e",
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1, // magiclink: login paralel dengan email sama saling membatalkan token
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],

@@ -6,14 +6,32 @@ import { LoginButton } from "./LoginButton";
 
 export const metadata: Metadata = { title: "Masuk" };
 
+const PESAN: Record<string, string> = {
+  auth: "Proses masuk gagal. Coba lagi dengan akun Google Anda.",
+  ditolak: "Email ini tidak terdaftar sebagai pengguna aplikasi. Hubungi admin untuk meminta akses.",
+  dicabut: "Akses Anda telah dicabut. Hubungi admin bila ini keliru.",
+};
+
 async function AuthError({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
   const { galat } = await searchParams;
-  if (galat !== "auth") return null;
+  const pesan = typeof galat === "string" ? PESAN[galat] : undefined;
+  if (!pesan) return null;
   return (
     <p role="alert" className="mb-4 border-y border-rule py-2 text-label text-status-error">
-      Proses masuk gagal. Pastikan memakai akun Google yang terdaftar, lalu coba lagi.
+      {pesan}
     </p>
   );
+}
+
+async function LoginForm({
+  searchParams,
+  configured,
+}: {
+  searchParams: PageProps<"/login">["searchParams"];
+  configured: boolean;
+}) {
+  const { next } = await searchParams;
+  return <LoginButton configured={configured} next={typeof next === "string" ? next : undefined} />;
 }
 
 export default function LoginPage(props: PageProps<"/login">) {
@@ -33,7 +51,9 @@ export default function LoginPage(props: PageProps<"/login">) {
           <Suspense fallback={null}>
             <AuthError searchParams={props.searchParams} />
           </Suspense>
-          <LoginButton configured={configured} />
+          <Suspense fallback={null}>
+            <LoginForm searchParams={props.searchParams} configured={configured} />
+          </Suspense>
           <p className="mt-4 text-label text-ink-subtle">
             Akses terbatas pada email yang sudah didaftarkan (allowlist).
           </p>
