@@ -13,6 +13,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ChartTooltipCard } from "./ChartTooltip";
+import { useReducedMotion } from "./useReducedMotion";
 import { RiskMarker } from "@/components/risk/RiskMarker";
 import { ChartFrame } from "@/components/ledger/ChartFrame";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
@@ -52,6 +54,7 @@ function Panel({
   ticks: number[];
   go: (l: RiskLevel) => void;
 }) {
+  const reduced = useReducedMotion();
   const max = ticks[ticks.length - 1];
   return (
     <div className="min-w-0">
@@ -59,6 +62,7 @@ function Panel({
       <div style={{ height: 232 }} role="group" aria-label={title}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
+            accessibilityLayer
             data={data}
             layout="vertical"
             margin={{ top: 4, right: 76, bottom: 4, left: 0 }}
@@ -88,14 +92,11 @@ function Panel({
                 if (!active || !payload?.length) return null;
                 const d = payload[0].payload as D;
                 return (
-                  <div className="rounded-md border border-rule-strong bg-surface-raised px-3 py-2 text-label shadow-overlay">
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <RiskMarker level={d.level} />
-                      {d.label}
-                    </div>
-                    <div className="mt-1 tabular-nums">{formatAngka(d.n)} aset</div>
-                    <div className="tabular-nums">{formatRupiahEksak(d.v)}</div>
-                  </div>
+                  <ChartTooltipCard
+                    title={d.label}
+                    level={d.level}
+                    lines={[`${formatAngka(d.n)} aset`, formatRupiahEksak(d.v)]}
+                  />
                 );
               }}
             />
@@ -103,7 +104,7 @@ function Panel({
               dataKey={k}
               maxBarSize={22}
               radius={[0, 4, 4, 0]}
-              isAnimationActive={false}
+              isAnimationActive={!reduced}
               onClick={(d) => go((d as unknown as D).level)}
               cursor="pointer"
             >

@@ -204,6 +204,11 @@
   --color-heat-3: var(--heat-3);
   --color-heat-4: var(--heat-4);
   --color-heat-5: var(--heat-5);
+  --color-heat-fg-1: var(--heat-fg-1);
+  --color-heat-fg-2: var(--heat-fg-2);
+  --color-heat-fg-3: var(--heat-fg-3);
+  --color-heat-fg-4: var(--heat-fg-4);
+  --color-heat-fg-5: var(--heat-fg-5);
 
   /* shadcn */
   --color-background: var(--background);
@@ -317,7 +322,7 @@
     font-optical-sizing: auto;
     text-wrap: balance;
   }
-  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  :where(a, button, input, select, textarea, summary, [tabindex], [data-slot="table-container"]):focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
   }

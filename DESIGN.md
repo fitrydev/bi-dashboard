@@ -701,6 +701,7 @@ Salin ke `app/globals.css`. Mode gelap lewat `.dark` (kelas pada `<html>`, dipas
 
   /* skala heatmap indikator (netral, 1 = rendah) */
   --heat-1: #F3F1EA; --heat-2: #E4DFD1; --heat-3: #C9C2AE; --heat-4: #9C957F; --heat-5: #6B6656;
+  --heat-fg-1: #1A1D21; --heat-fg-2: #1A1D21; --heat-fg-3: #1A1D21; --heat-fg-4: #1A1D21; --heat-fg-5: #FBFAF7; /* teks di atas heat-n, ≥4,5:1 */
 
   /* tipografi */
   --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
@@ -775,6 +776,7 @@ Salin ke `app/globals.css`. Mode gelap lewat `.dark` (kelas pada `<html>`, dipas
   --risk-unrated: #9A978D;   --risk-unrated-ink: #B4B0A6;
 
   --heat-1: #1C2024; --heat-2: #2E343A; --heat-3: #4A525A; --heat-4: #7A838C; --heat-5: #B4B0A6;
+  --heat-fg-1: #ECE9E1; --heat-fg-2: #ECE9E1; --heat-fg-3: #ECE9E1; --heat-fg-4: #15181B; --heat-fg-5: #15181B;
 
   --shadow-overlay: 0 4px 12px rgb(0 0 0 / .45);
   --destructive-foreground: #15181B;
@@ -817,6 +819,8 @@ Salin ke `app/globals.css`. Mode gelap lewat `.dark` (kelas pada `<html>`, dipas
 
   --color-heat-1: var(--heat-1); --color-heat-2: var(--heat-2); --color-heat-3: var(--heat-3);
   --color-heat-4: var(--heat-4); --color-heat-5: var(--heat-5);
+  --color-heat-fg-1: var(--heat-fg-1); --color-heat-fg-2: var(--heat-fg-2); --color-heat-fg-3: var(--heat-fg-3);
+  --color-heat-fg-4: var(--heat-fg-4); --color-heat-fg-5: var(--heat-fg-5);
 
   /* shadcn */
   --color-background: var(--background);

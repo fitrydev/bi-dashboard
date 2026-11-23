@@ -341,7 +341,9 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
 | 0 — Design system & DESIGN.md | ✅ selesai & disetujui user (19 Nov 2026): palet (High terang = terakota `#C26159`), alur dashboard sadar-cakupan, penggantian primitif UI prototipe dengan shadcn di Fase 1 |
 | 1 — Scaffold | ✅ selesai (19 Nov 2026): verifikasi opus "lolos bersyarat", temuan minor sudah diperbaiki |
 | 2 — Skema DB, RLS, allowlist, seed | ✅ selesai (19 Nov 2026): verifikasi opus "lolos bersyarat", 2 temuan P2 sudah ditutup |
-| 3 — Auth Google + proxy + guard role | ⏭ berikutnya: jalankan `/fase-3` di sesi baru |
+| 3 — Auth Google + proxy + guard role | ✅ selesai: login Google disimulasikan (kredensial belum ada), verifikasi opus, 1 temuan LOW sudah diperbaiki |
+| 4 — Design system: token, komponen risk, chart primitives | ✅ selesai (23 Nov 2026): review visual opus "lolos bersyarat", semua P0/P1 diperbaiki |
+| 5 — Dashboard + RPC summary | ⏭ berikutnya: jalankan `/fase-5` di sesi baru |
 
 ### Hasil Fase 0
 - `DESIGN.md` final: token light/dark lolos validator palet `dataviz` (exit 0 kedua mode) dan 116/116 pasangan kontras AA; §12 berisi keputusan dari kritik prototipe.
@@ -397,3 +399,48 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
   - Email admin asli belum ditentukan; isi lewat `SEED_ADMIN_EMAIL` sebelum seed di production.
   - Penilaian seed bertanggal 2026-11-18.
   - Docker memakai Colima. Bila `docker pull` macet, jalankan `colima restart`.
+
+### Hasil Fase 3
+- **OAuth lokal:** kredensial Google belum ada, jadi login disimulasikan. Provider Google enabled membaca env `SUPABASE_AUTH_EXTERNAL_GOOGLE_*`, dan `supabase start` tetap jalan saat env kosong. Email, phone, dan anonymous mati; signup email ditolak. Admin seed tetap `admin@example.com` (placeholder, diganti saat deploy).
+- **Proxy (`lib/supabase/proxy.ts`):** tanpa sesi → `/login?next=`; bersesi di `/login` → `/dashboard`. Rute publik: `/login`, `/auth/callback`, `/auth/keluar`, `/akses-ditolak`. Redirect membawa cookie + header no-cache.
+- **Keputusan allowlist:** dicek di layout server (`lib/auth/allowlist.ts`, `AllowlistGate` di `app/(app)/layout.tsx`), bukan di proxy, untuk menghindari RPC per request/prefetch.
+  - Jika dicabut → `/auth/keluar?alasan=dicabut` (GET signOut hanya bila `is_allowed()` = false) → `/akses-ditolak`. Keluar biasa lewat POST.
+  - Batas: soft navigation tidak dicek ulang; RLS tetap melindungi data.
+- **Guard role:** `lib/auth/require-role.ts` berisi `requireUser`/`requireRole` dengan hirarki admin ⊇ editor ⊇ viewer. `AuthError` memakai code `UNAUTHENTICATED`/`FORBIDDEN`. Gagal tertutup: error RPC atau role tak dikenal → `FORBIDDEN`. Unit test dengan mock.
+- **Halaman:** `/login` (galat auth/ditolak/dicabut), `/akses-ditolak`, `UserMenu` (nama, email, role, Keluar) dibungkus Suspense (cacheComponents). Callback memetakan error hook 403 → `/login?galat=ditolak` lewat regex longgar (ponytail).
+- **e2e:** `e2e/session.ts` `loginAs` (admin `generateLink` magiclink → `verifyOtp` type email); `signInWithPassword` mati. Playwright memuat `.env.local` (dari `supabase status -o env`, gitignored), workers 1 karena satu token magiclink per user. `e2e/auth.spec.ts` mencakup 5 skenario.
+- **Temuan:** `auth.admin.createUser` MELEWATI hook `before_user_created`, sedangkan `generateLink` tidak (403). Kode server yang membuat user wajib cek allowlist sendiri.
+- **Gate:** `db reset`, test db 93, typecheck, lint, test 61, build, e2e 18/18 desktop+mobile hijau. Review keamanan oleh opus: satu temuan LOW diperbaiki (role tak dikenal lolos guard).
+- **Risiko residual:**
+  - Matcher mengecualikan path berakhiran ekstensi gambar sehingga proxy terlewati, tetapi gagal tertutup lewat `AllowlistGate` + RLS. Opsi: kecualikan hanya `_next/static` dan `_next/image`.
+  - Cookie sesi tidak eksplisit `Secure`; pertimbangkan `cookieOptions.secure` di prod.
+  - Warning Next "blocking-prerender-current-time" dari `_loadSession` Supabase saat build/e2e, tidak fatal.
+- **Menunggu keputusan user:** kredensial Google OAuth (Client ID/secret; redirect URI `http://127.0.0.1:54321/auth/v1/callback` untuk lokal) dan email admin pertama untuk produksi.
+
+### Hasil Fase 4
+- **Token:** `app/globals.css` cocok dengan DESIGN.md §10 di mode terang dan gelap (hex tidak berubah). Yang ditambahkan:
+  - `--color-heat-fg-1..5` (utilitas `text-heat-fg-n`), sekarang juga tercatat di DESIGN.md §10;
+  - ring fokus 2px di `tabs` dan wadah tabel yang bisa di-scroll.
+- **Validasi warna:**
+  - Validator palet `dataviz` exit 0 di kedua mode (ΔE CVD terburuk 8,3 terang / 10,0 gelap, sah karena selalu disertai penanda bentuk dan label).
+  - `bun scripts/check-contrast.ts`: 104/104 pasangan AA lolos.
+- **Komponen risk** (`components/risk/index.ts`): `ScoreValue`, `IndicatorMeter` (6 indikator, bobot, rubrik lewat prop `rubric`), `ScheduleStatus` (fungsi murni `scheduleView`), dan `DataWarning` (inline/list). Status selalu ditampilkan dengan ikon + teks.
+- **Chart primitives** (`components/charts/index.ts`):
+  - `ChartTooltip`/`ChartTooltipCard`, `ChartLegend` (penanda bentuk), `SimpleBar` (`accessibilityLayer`), `StackedBar`, `Sparkline`, `ChartSkeleton`, `ChartEmpty`, `useReducedMotion`, dan logika murni di `chart-logic.ts`.
+  - Tanpa donut, sesuai DESIGN §0/§11.
+- **Galeri:** `/design` (`app/(app)/design/`).
+  - Keputusan: tetap di bawah `AllowlistGate`, di luar navigasi, `robots: noindex`, dan **ikut build produksi**. Halaman ini tidak memuat data sensitif selain seed.
+  - Fungsi format tidak bisa dikirim dari server ke chart client, jadi pembungkusnya ada di `Bars.tsx`.
+- **Test:** Vitest 75 (7 file). e2e 22: `e2e/design.spec.ts` mengecek 1440/375 × terang/gelap (tanpa horizontal scroll, tanpa error konsol) dan menyimpan screenshot di `docs/screenshots/fase-4/` (review per section di `review/`).
+- **Review visual (opus):** 1 P0 diperbaiki (tabel contoh terpotong di 375px → list mobile). 6 P1 diperbaiki: baris duplikat, sumbu "—" di titik nol, contoh "Segera" yang salah, target sentuh `ChartEmpty`, ring fokus wadah tabel, dan tooltip fiktif.
+- **Gate:** `db reset`, test db 93, typecheck, lint, test 75, contrast 104/104, build, dan e2e 22 hijau. Kontrak Fase 3 (`requireRole`, `AllowlistGate`, `loginAs`) tidak berubah.
+- **P2 terbuka / lanjutan:**
+  - Bar Recharts bisa difokus sebagai satu svg, tanpa roving per bar (jalur tabel tersedia).
+  - `StackedBar` dan `Sparkline` tidak interaktif.
+  - Helper `AssetRow` masih dibangun di galeri; pindahkan ke `lib` saat Fase 5 memakai data DB.
+  - Warning prerender `Date.now()` dari sesi Supabase masih ada.
+- **Menunggu keputusan user:**
+  1. Hue High di mode gelap (oranye tua `#B15604`) berbeda dari High terang (terakota `#C26159`).
+  2. Teks rubrik: diteruskan sebagai prop `rubric` dari halaman, atau masuk ke `ScoringParams`.
+  3. `IndicatorMeter` memakai bar penuh netral, bukan kotak 12px seperti DESIGN §6.3.
+  4. Skor disembunyikan di list mobile bila aset belum dinilai, agar "Belum dinilai" tidak tampil dua kali.
