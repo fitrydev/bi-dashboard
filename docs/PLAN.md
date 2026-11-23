@@ -344,7 +344,8 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
 | 3 — Auth Google + proxy + guard role | ✅ selesai: login Google disimulasikan (kredensial belum ada), verifikasi opus, 1 temuan LOW sudah diperbaiki |
 | 4 — Design system: token, komponen risk, chart primitives | ✅ selesai (23 Nov 2026): review visual opus "lolos bersyarat", semua P0/P1 diperbaiki |
 | 5 — Dashboard + RPC summary | ✅ selesai (23 Nov 2026): review visual opus tanpa P0, semua P1 diperbaiki |
-| 6 — Aset, penilaian, monitoring, jadwal | ⏭ berikutnya: jalankan `/fase-6` di sesi baru |
+| 6 — Aset, penilaian, monitoring, jadwal | ✅ selesai (23 Nov 2026): review keamanan & visual opus tanpa P0, semua P1 diperbaiki |
+| 7 — Import/export Excel | ⏭ berikutnya: jalankan `/fase-7` di sesi baru |
 
 ### Hasil Fase 0
 - `DESIGN.md` final: token light/dark lolos validator palet `dataviz` (exit 0 kedua mode) dan 116/116 pasangan kontras AA; §12 berisi keputusan dari kritik prototipe.
@@ -473,4 +474,33 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
   - Bar "Menuju 28 aset" memakai basis 136.
   - Warning prerender `Date.now()` (sesi Supabase / UserMenu) masih muncul.
 - **Lanjutan Fase 6:** link KPI (`warn=`, `pemanfaatan=`, `dinilai=`) dan CTA `/aset/[code]/nilai` menunggu halaman Aset dan form penilaian.
+
+### Hasil Fase 6
+- **Keputusan user (23 Nov 2026):** foto monitoring tetap **ditunda** (§9.7); draf penilaian di tabel `assessment_drafts` (bukan localStorage); kode aset tak dikenal = **soft 404** (UI "tidak ditemukan", status 200) — tanpa query DB di proxy (layout `(app)` men-stream lewat Suspense sehingga `notFound()` terlambat untuk status).
+- **Migrasi baru (hanya menambah):**
+  - `20261123000200_assessment_drafts.sql`: satu draf per (aset, user), `user_id` dipaksa `stamp_actor`, data jsonb objek ≤ 64 KB, RLS pemilik + `has_role('editor')`.
+  - `20261123000300_today_wib.sql`: `today_wib()`; monitoring & penilaian masa depan (WIB) ditolak DB.
+  - `20261123000400_write_guards.sql`: non-admin dipaksa `params_version` aktif saat insert penilaian; penilaian/monitoring aset nonaktif ditolak; batas panjang teks = batas zod (`not valid`).
+- **Server Actions** (`lib/actions/`, `lib/schemas/`): `createAsset`/`updateAsset`/`softDeleteAsset`/`restoreAsset`, `saveAssessment`/`saveAssessmentDraft`/`discardAssessmentDraft`, `recordMonitoring`. Semua `requireRole("editor")` → zod → `ActionResult` dengan pesan Indonesia (`toActionError`, error mentah hanya ke log server). `revalidatePath` (belum ada `use cache`; pindah ke `updateTag` bila nanti memakai tag).
+- **Halaman:**
+  - `/aset`: TanStack + filter URL (kunci dashboard + `warn`, `dinilai`, `jadwal`, `q`, `kolom`, `urut`; `lib/aset/filters.ts`), list mobile + bottom sheet, hapus optimistic (`useOptimistic`) + toast "Urungkan" (editor/admin). Filter **pilih-satu** agar link dashboard tetap valid.
+  - `/aset/[code]` (folder `[id]` → `[code]`): identitas, skor + `IndicatorMeter`(rubric), peringatan, riwayat penilaian (sparkline), monitoring, audit (admin), tombol hapus.
+  - `/aset/[code]/nilai`: form rubrik §6.8, prefill draf → skor terakhir (3.3.7), preview live, simpan draf/buang draf.
+  - `/aset/[code]/monitoring`: form cepat mobile-first (tanpa foto).
+  - `/jadwal`: daftar per status + kalender bulan (list per tanggal di mobile), filter PIC.
+- **P2 Fase 5 tertutup:** link idle `RegionTable` → `pemanfaatan=idle_kosong`; wilayah tak dikenal di URL tidak lagi mengosongkan select.
+- **Review keamanan (opus):** 0 P0/P1. P2 diperbaiki: aset nonaktif bisa dinilai/dimonitor, `params_version` pilihan editor, teks tanpa batas di DB, `decodeURIComponent` melempar pada URL rusak (`safeDecode`).
+- **Review visual (opus):** 0 P0. P1 diperbaiki: `cn()` membuang token `text-label/title/…` (tailwind-merge diperluas — berdampak ke h1 mobile, RiskBadge, ScheduleStatus di seluruh app), kolom audit `updated_by`, screenshot diambil sebelum skenario tulis. P2 diperbaiki: badge jadwal mobile melebar, "Filter (0)" → "Filter", kalimat ganda kalender kosong, input form nilai 16px di mobile.
+- **Test:** pgTAP 142 (11 file), Vitest 125, e2e 62 lolos + 4 skip (skenario tulis hanya desktop) — `e2e/aset.spec.ts`: link dashboard, filter URL, viewer hanya-lihat, editor menilai → dashboard +1, draf, monitoring, hapus+Urungkan, 6 halaman × 1440/375 × terang/gelap. Screenshot `docs/screenshots/fase-6/`.
+- **Gate:** `db reset`, test db 142, db lint, typecheck, lint, test 125, contrast 104/104, build, e2e 62/62 hijau.
+- **Disetujui user (23 Nov 2026):** filter `/aset` pilih-satu (kunci URL dashboard), view/RPC tetap `current_date` (UTC) untuk sementara, UI buat/ubah aset menunggu (aset baru lewat import Fase 7).
+- **P2 terbuka / lanjutan:**
+  - UI buat/ubah aset belum ada (action siap); aset baru masuk lewat import Fase 7.
+  - Jadwal "Tak terjadwal" menampilkan ±134 baris identik (lipat / batasi); kalender mobile: navigasi bulan terbungkus 3 kolom.
+  - Opsi "Belum diketahui": arsir melintasi teks; halaman monitoring: breadcrumb & urutan tombol belum seragam dengan form nilai.
+  - Tabel `/aset` memakai RiskBadge `md` (§6.1 minta `sm`) dan scroller `max-h-[70vh]` bersarang.
+  - View/`dashboard_summary` masih `current_date` (UTC) — status jadwal bisa meleset 1 hari 00:00–07:00 WIB.
+  - Sonner: tanpa `role="status"` dan timer tidak jeda saat fokus keyboard (§6.10).
+  - `SectionBoundary` diimpor dari `dashboard/client` oleh `/aset` & `/jadwal` → pindah ke `components/ledger`.
+  - Warning prerender `Date.now()` (auth-js `_loadSession`) dan P2 Fase 5 lain (galat ganda tanpa h1, `RightTimeline` region, `TopValue` dua link, "Ditambah 0", basis 136) masih terbuka.
 

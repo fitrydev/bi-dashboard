@@ -37,6 +37,38 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"assessment_drafts": {
+                  Row: {
+                    "asset_id": string,"data": NonNullable<Json>,"id": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "asset_id": string,"data"?: NonNullable<Json>,"id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "asset_id"?: string,"data"?: NonNullable<Json>,"id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assessment_drafts_asset_id_fkey"
+      columns: ["asset_id"]
+isOneToOne: false
+      referencedRelation: "assets"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assessment_drafts_asset_id_fkey"
+      columns: ["asset_id"]
+isOneToOne: false
+      referencedRelation: "v_asset_latest"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assessment_drafts_asset_id_fkey"
+      columns: ["asset_id"]
+isOneToOne: false
+      referencedRelation: "v_data_quality_issues"
+      referencedColumns: ["asset_id"]
+    }
+                  ]
                 },"assessments": {
                   Row: {
                     "assessed_at": string,"asset_id": string,"category": Database["public"]['Enums']["risk_category"] | null,"created_at": string,"created_by": string | null,"critical_override": boolean,"findings": string | null,"follow_up": string | null,"follow_up_pic": string | null,"id": string,"is_complete": boolean,"override_reason": string | null,"params_version": number,"s_control": number | null,"s_legal": number | null,"s_location": number | null,"s_physical": number | null,"s_strategic": number | null,"s_utilization": number | null,"target_date": string | null,"total_score": number | null
@@ -317,6 +349,9 @@ isOneToOne: false
                            },
 "recalculate_with_active_params":
 { Args: { "dry_run"?: boolean }; Returns: Json
+                           },
+"today_wib":
+{ Args: { "p_at"?: string }; Returns: string
                            },
 "utilization_label":
 { Args: { "p": Database["public"]['Enums']["utilization_status"] }; Returns: string

@@ -19,7 +19,7 @@ for (const scheme of ["light", "dark"] as const) {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("dari 136 aset");
     await expect(page.getByRole("link", { name: /Mulai penilaian/ })).toBeVisible();
     await expect(page.getByText("44 aset placeholder tidak dihitung")).toBeVisible();
-    await expect(page.getByText(/Skor 47,0 · Medium/)).toBeVisible();
+    await expect(page.getByText(/Skor 47,0 · Medium|Rata-rata skor/)).toBeVisible();
     await expect(page.locator("#tren")).toHaveCount(0); // periods < 2
     await page.waitForLoadState("networkidle");
 

@@ -17,6 +17,19 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      // DESIGN §6.10: kanan-bawah desktop; mobile di atas bottom-nav (56px + safe-area); maks 3.
+      position="bottom-right"
+      mobileOffset={{ bottom: "calc(72px + env(safe-area-inset-bottom))" }}
+      visibleToasts={3}
+      containerAriaLabel="Notifikasi"
+      toastOptions={{
+        classNames: {
+          // tombol aksi teks bergaris bawah, area ≥ 44px (override gaya bawaan sonner 24px)
+          actionButton:
+            "h-11! min-w-11 bg-transparent! px-2! text-body! font-medium! text-ink! underline underline-offset-2 hover:decoration-2",
+        },
+        style: { boxShadow: "var(--shadow-overlay)" },
+      }}
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -28,7 +41,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
+          "--normal-border": "var(--rule-strong)",
           "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }

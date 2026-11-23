@@ -11,3 +11,12 @@ export function href(path: string, q?: Query): string {
 
 export const asetList = (q?: Query) => href("/aset", q);
 export const asetDetail = (code: string) => `/aset/${encodeURIComponent(code)}`;
+
+/** decodeURIComponent yang tidak melempar untuk URL rusak (mis. `%E0%A4%A`) → kembalikan mentah (berakhir "tidak ditemukan"). */
+export function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}

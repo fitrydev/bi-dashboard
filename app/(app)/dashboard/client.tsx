@@ -71,6 +71,9 @@ export function FilterBar({ regions }: { regions: string[] }) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL}>Semua</SelectItem>
+          {sp.get(k) && !items.some(([v]) => v === sp.get(k)) && (
+            <SelectItem value={sp.get(k)!}>Tidak dikenal: {sp.get(k)}</SelectItem>
+          )}
           {items.map(([v, l]) => (
             <SelectItem key={v} value={v}>
               {l}

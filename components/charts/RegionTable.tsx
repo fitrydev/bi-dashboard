@@ -80,7 +80,7 @@ export function RegionTable({ rows, regions }: { rows: AssetRow[]; regions?: str
         </td>
         <td className="px-3 text-right tabular-nums">
           {iv ? (
-            <Link className="link" href={asetList({ ...q(g), pakai: "idle" })}>
+            <Link className="link" href={asetList({ ...q(g), pemanfaatan: "idle_kosong" })}>
               {formatRupiahRingkas(iv)}{" "}
               <span className="text-ink-subtle">({formatPersen(iv / v)})</span>
             </Link>
@@ -119,7 +119,7 @@ export function RegionTable({ rows, regions }: { rows: AssetRow[]; regions?: str
                   <dt className="text-label text-ink-muted">Idle</dt>
                   <dd className="tabular-nums">
                     {iv ? (
-                      <Link className="link inline-flex min-h-11 items-center" href={asetList({ ...q(g), pakai: "idle" })}>
+                      <Link className="link inline-flex min-h-11 items-center" href={asetList({ ...q(g), pemanfaatan: "idle_kosong" })}>
                         {formatRupiahRingkas(iv)}
                       </Link>
                     ) : (
