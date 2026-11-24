@@ -7,6 +7,8 @@ Pengganti Excel `source/Template_Matriks_Risiko_Monitoring_Aset_2027.xlsx`. Stac
 ```bash
 colima start                       # Docker runtime
 bun install
+# data asli TIDAK ada di repo: taruh Excel di source/, lalu
+bun run db:seed-gen                # → supabase/seed.sql (gitignored)
 bunx supabase start                # migrasi + seed (136 aset, admin@example.com)
 bunx supabase status -o env        # salin API_URL / PUBLISHABLE_KEY / SECRET_KEY ke .env.local (lihat .env.example)
 bun dev

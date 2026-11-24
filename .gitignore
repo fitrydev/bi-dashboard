@@ -36,3 +36,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# data rahasia (aset asli) — jangan pernah di-commit; simpan lokal saja
+source/*.xlsx
+supabase/seed.sql
+design/data/
+docs/screenshots/
