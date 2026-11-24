@@ -41,7 +41,8 @@ import {
 } from "@/lib/format";
 import { asetDetail, asetList } from "@/lib/routes";
 import { DEFAULT_PARAMS, RISK_LABEL, type WarnKey } from "@/lib/scoring";
-import { FilterBar, SectionBoundary, ShareChart } from "./client";
+import { SectionBoundary } from "@/components/ledger/SectionBoundary";
+import { FilterBar, ShareChart } from "./client";
 
 export const metadata: Metadata = { title: "Dashboard" };
 

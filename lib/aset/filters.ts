@@ -135,3 +135,24 @@ export function rowsReducer(rows: AsetListRow[], a: RowsAction): AsetListRow[] {
   if (a.type === "remove") return rows.filter((r) => r.code !== a.code);
   return rows.some((r) => r.code === a.row.code) ? rows : [...rows, a.row];
 }
+
+export const sortRows = (rows: AsetListRow[], s: Sort) => {
+  const get = SORT_GET[s.key];
+  const m = s.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const x = get(a), y = get(b);
+    if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1; // kosong selalu di bawah
+    return (x < y ? -1 : x > y ? 1 : 0) * m;
+  });
+};
+const SORT_GET: Record<SortKey, (r: AsetListRow) => string | number | null> = {
+  id: (r) => r.code,
+  nama: (r) => r.name.toLowerCase(),
+  wilayah: (r) => r.region,
+  jenis: (r) => r.type,
+  pemanfaatan: (r) => r.utilization,
+  nilai: (r) => r.value,
+  kategori: (r) => LEVEL_RANK[r.level],
+  skor: (r) => r.score,
+  jadwal: (r) => r.days,
+};

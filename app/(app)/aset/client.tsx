@@ -11,7 +11,7 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Search, SlidersHorizontal, Trash2, TriangleAlert, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Download, Search, SlidersHorizontal, Trash2, TriangleAlert, X } from "lucide-react";
 import { EmptyState } from "@/components/ledger/EmptyState";
 import { RiskBadge, ScheduleStatus } from "@/components/risk";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ import {
   DEFAULT_SORT,
   JADWAL_KEYS,
   JADWAL_LABEL,
-  LEVEL_RANK,
   TYPE_OPTIONS,
   UTIL_OPTIONS,
   WARN_KEYS,
@@ -40,6 +39,7 @@ import {
   parseAsetFilters,
   rowsReducer,
   serializeAsetFilters,
+  sortRows,
   type AsetListRow,
   type ColumnKey,
   type SortKey,
@@ -234,6 +234,12 @@ export function AsetList({ rows: serverRows, regions, canEdit = false }: { rows:
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <Button asChild variant="outline" className="min-h-11 lg:min-h-0">
+            <a href={`/export/csv?${sp.toString()}`} download>
+              <Download aria-hidden="true" />
+              Ekspor
+            </a>
+          </Button>
           <p aria-live="polite" className="ml-auto text-label text-ink-muted tabular-nums">
             {formatAngka(filtered.length)} dari {formatAngka(rows.length)} aset
           </p>
@@ -313,27 +319,6 @@ export function AsetList({ rows: serverRows, regions, canEdit = false }: { rows:
     </div>
   );
 }
-
-const sortRows = (rows: AsetListRow[], s: { key: SortKey; dir: "asc" | "desc" }) => {
-  const get = SORT_GET[s.key];
-  const m = s.dir === "asc" ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    const x = get(a), y = get(b);
-    if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1; // kosong selalu di bawah
-    return (x < y ? -1 : x > y ? 1 : 0) * m;
-  });
-};
-const SORT_GET: Record<SortKey, (r: AsetListRow) => string | number | null> = {
-  id: (r) => r.code,
-  nama: (r) => r.name.toLowerCase(),
-  wilayah: (r) => r.region,
-  jenis: (r) => r.type,
-  pemanfaatan: (r) => r.utilization,
-  nilai: (r) => r.value,
-  kategori: (r) => LEVEL_RANK[r.level],
-  skor: (r) => r.score,
-  jadwal: (r) => r.days,
-};
 
 function Table({
   rows,

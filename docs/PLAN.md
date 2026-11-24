@@ -345,7 +345,8 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
 | 4 — Design system: token, komponen risk, chart primitives | ✅ selesai (23 Nov 2026): review visual opus "lolos bersyarat", semua P0/P1 diperbaiki |
 | 5 — Dashboard + RPC summary | ✅ selesai (23 Nov 2026): review visual opus tanpa P0, semua P1 diperbaiki |
 | 6 — Aset, penilaian, monitoring, jadwal | ✅ selesai (23 Nov 2026): review keamanan & visual opus tanpa P0, semua P1 diperbaiki |
-| 7 — Import/export Excel | ⏭ berikutnya: jalankan `/fase-7` di sesi baru |
+| 7 — Import/export Excel | ✅ selesai (23 Nov 2026): review keamanan & visual opus tanpa P0, 4 P1 + 10 P2 diperbaiki |
+| 8 — Pengaturan | ⏭ berikutnya: jalankan `/fase-8` di sesi baru |
 
 ### Hasil Fase 0
 - `DESIGN.md` final: token light/dark lolos validator palet `dataviz` (exit 0 kedua mode) dan 116/116 pasangan kontras AA; §12 berisi keputusan dari kritik prototipe.
@@ -504,3 +505,52 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
   - `SectionBoundary` diimpor dari `dashboard/client` oleh `/aset` & `/jadwal` → pindah ke `components/ledger`.
   - Warning prerender `Date.now()` (auth-js `_loadSession`) dan P2 Fase 5 lain (galat ganda tanpa h1, `RightTimeline` region, `TopValue` dua link, "Ditambah 0", basis 136) masih terbuka.
 
+### Hasil Fase 7
+- **Keputusan user (23 Nov 2026):**
+  - Penilaian dengan (aset, tanggal) sama tetapi isi berbeda **diperbarui** (bukan dilewati).
+  - File unggahan **tidak disimpan**: parsing di browser, `import_batches` hanya menyimpan nama file + laporan.
+  - Batas file **5 MB** (dan 5.000 baris per sheet).
+  - Export format template = **Master Aset + penilaian terakhir** per aset.
+- **Migrasi baru (hanya menambah):** `20261123000500_import_commit.sql` + `20261123000600_import_fixes.sql`. `import_commit(batch_id, rows)` adalah `security invoker`, `search_path=''`, dan editor+.
+  - Batch dikunci `FOR UPDATE`, harus milik pemanggil dan berstatus `validated`.
+  - Baris aset diproses lebih dulu, lalu penilaian. Tiap baris berjalan dalam subtransaksi, jadi baris error dilewati.
+  - Upsert aset per `asset_code` hanya memakai kunci yang terisi; jika tidak ada yang berbeda, hasilnya `unchanged` tanpa UPDATE dan tanpa audit.
+  - Alias wilayah/pemanfaatan di-resolve di DB. Aset nonaktif ditolak per baris.
+  - Penilaian di-upsert per (aset, tanggal), memakai yang terbaru bila ganda.
+  - Hasil (`CommitResult`) masuk ke `import_batches.report.commit`. Akumulasi hasil memakai `jsonb[]` (O(n)).
+- **TS (`lib/import/`):**
+  - `parse.ts`: SheetJS di Web Worker (`worker.ts`, validasi ikut jalan di worker). Kolom opsional baru "Alasan Override"; bila tidak ada, dipakai Catatan Temuan.
+  - `validate.ts`: tiga status DESIGN §12.2 — Ditolak, Peringatan data, Temuan risiko. Teks bebas hanya di-trim, baris baru dipertahankan.
+  - `diff.ts`: baru/berubah/sama, normalisasinya sama dengan RPC.
+  - `load.ts`: konteks validasi + data existing, memakai `lib/supabase/paginate.ts` (`fetchAll`, melewati `max_rows=1000`).
+  - Kontrak payload di `contract.ts`.
+- **UI `/import`:** 3 langkah (Unggah → Validasi & pratinjau → Konfirmasi).
+  - Cek ekstensi, MIME, magic bytes ZIP, dan ukuran 5 MB. Tersedia Batal dan timeout 30 dtk untuk worker.
+  - Filter pilih-satu dan paginasi 50 baris. Detail "Berubah" memakai label Indonesia.
+  - Laporan error berupa CSV `;`. Viewer hanya-baca.
+  - Action `lib/actions/import.ts` (`requireRole("editor")`, zod, error RPC dipetakan sendiri). `serverActions.bodySizeLimit = "4mb"`.
+- **Export:** `/export/xlsx` (round-trip), `/export/template` (kosong), `/export/csv` (filter URL `/aset` + `kolom`/`urut`, pemisah `;`, BOM).
+  - Akses `requireRole("viewer")` (non-allowlist → 403), `no-store`.
+  - Netralisasi formula injection (`/^[\s'"]*[=+\-@]|^[\t\r\n]/`). Sel xlsx selalu string, tanpa `f`.
+  - Tombol "Ekspor" ada di `/aset`.
+  - Form aset menyimpan `utilization_raw` = label kanonik (bukan null) agar export → import tidak memunculkan perubahan semu.
+- **Angka file asli:**
+  - 137 baris (136 aset + 1 penilaian), 0 Ditolak, 4 Temuan risiko (3 hak lewat + 1 < 12 bln).
+  - Peringatan: D1 44 nilai / 39 luas, D4 136, D5 123, alias 11, D2 3.
+  - Diff vs seed: 137 Sama. Impor ulang dan round-trip juga semuanya Sama.
+- **P2 Fase 6 tertutup:** `SectionBoundary` → `components/ledger/SectionBoundary.tsx`; tombol Ekspor `/aset`; sonner sudah `aria-live="polite"` + label "Notifikasi".
+- **Test:** pgTAP 174 (12 file), Vitest 154, e2e 72 lolos + 8 skip (`e2e/import.spec.ts`: viewer, impor asli → dashboard 136, impor ulang, round-trip, CSV Jawa Barat 12 baris, 1440/375 × terang/gelap). Screenshot di `docs/screenshots/fase-7/`.
+- **Gate:** `db reset`, test db 174, db lint, typecheck, lint, test 154, contrast 104/104, build, e2e 72/72 hijau.
+- **Menunggu keputusan user:**
+  1. Editor tidak bisa *mengoreksi* penilaian lama lewat impor, karena RLS `assessments_update` hanya untuk admin; baris seperti itu menjadi error "koreksi hanya admin". Selama semua user admin (§9.1) ini belum berdampak. Pilihannya: biarkan, atau beri editor policy update terbatas.
+  2. Skor 4–5 tanpa catatan di impor hanya diberi peringatan (form menolaknya), supaya penilaian asli 251116 tetap masuk.
+  3. ID berformat ribuan ("251.116") dinormalisasi menjadi 251116 (`ponytail:` di `normCode`).
+  4. Viewer boleh ekspor (data memang bisa dibaca via RLS).
+  5. Pemisah CSV `;` (Excel id-ID).
+- **P2 terbuka:**
+  - Sonner: timer **tidak** jeda saat toast mendapat fokus keyboard (hanya saat hover/expand); perlu pembungkus sendiri.
+  - `import_batches` tertinggal berstatus `validated` bila RPC gagal.
+  - `rows_*` pada batch dikirim klien (informasional saja).
+  - Editor bisa membedakan "batch tidak ada" dari "bukan milik Anda".
+  - `fetchAll` dibatasi 20.000 baris (`ponytail:`).
+  - P2 Fase 5/6 lain (jadwal "Tak terjadwal", view `current_date`, warning prerender `Date.now()`, dsb.) masih terbuka.

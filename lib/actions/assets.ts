@@ -2,6 +2,7 @@
 
 import { requireRole } from "@/lib/auth/require-role";
 import { assetInput, type AssetData, type AssetInput } from "@/lib/schemas/asset";
+import { UTIL_LABEL } from "@/lib/export/workbook";
 import { createClient } from "@/lib/supabase/server";
 import { MSG, toActionError, toFieldErrors, type ActionResult } from "./result";
 import { revalidateAsset } from "./shared";
@@ -24,7 +25,14 @@ async function regionId(supabase: Client, name: string): Promise<string | null> 
 }
 
 type RowOrError =
-  | { row: Omit<AssetData, "region"> & { region_id: string }; result?: never }
+  | {
+      row: Omit<AssetData, "region"> & {
+        region_id: string;
+        utilization_raw: string | null;
+        utilization_needs_review: false;
+      };
+      result?: never;
+    }
   | { row?: never; result: ActionResult<never> };
 
 async function toRow(supabase: Client, input: AssetInput): Promise<RowOrError> {
@@ -41,7 +49,10 @@ async function toRow(supabase: Client, input: AssetInput): Promise<RowOrError> {
       },
     };
   }
-  return { row: { ...rest, region_id } };
+  // Pemanfaatan dari form = status final yang sudah ditinjau: raw = label kanonik (agar ekspor → impor
+  // tidak memunculkan perubahan semu) dan tanda review dibuang.
+  const utilization_raw = rest.utilization ? UTIL_LABEL[rest.utilization] : null;
+  return { row: { ...rest, region_id, utilization_raw, utilization_needs_review: false } };
 }
 
 export async function createAsset(input: AssetInput): Promise<ActionResult<{ code: string }>> {

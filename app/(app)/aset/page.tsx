@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ledger/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadAsetList } from "@/lib/aset/load";
 import { createClient } from "@/lib/supabase/server";
-import { SectionBoundary } from "../dashboard/client";
+import { SectionBoundary } from "@/components/ledger/SectionBoundary";
 import { AsetList } from "./client";
 
 export const metadata: Metadata = { title: "Daftar Aset" };

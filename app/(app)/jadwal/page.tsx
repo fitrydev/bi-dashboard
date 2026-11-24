@@ -24,7 +24,7 @@ import { loadJadwal } from "@/lib/jadwal/load";
 import { asetDetail, href } from "@/lib/routes";
 import type { Due } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
-import { SectionBoundary } from "../dashboard/client";
+import { SectionBoundary } from "@/components/ledger/SectionBoundary";
 
 export const metadata: Metadata = { title: "Jadwal Monitoring" };
 

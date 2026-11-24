@@ -63,6 +63,8 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  // Impor ≤5000 baris (JSON) bisa >1MB; lihat lib/actions/import.ts.
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   turbopack: {
     rules: {
       "*.css": {
