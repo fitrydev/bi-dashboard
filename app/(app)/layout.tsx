@@ -4,10 +4,10 @@ import {
   HelpCircleIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
-  SettingsIcon,
   SquarePenIcon,
 } from "lucide-react";
-import { Suspense, type ReactNode } from "react";
+import { Fragment, Suspense, type ReactNode } from "react";
+import { AdminNavItem } from "@/components/shell/AdminNavItem";
 import { NavLink } from "@/components/shell/NavLink";
 import { UserMenu } from "@/components/shell/UserMenu";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -27,11 +27,6 @@ const SIDE = [
     href: "/import",
     label: "Import",
     icon: <FileSpreadsheetIcon className="size-[18px]" {...ic} />,
-  },
-  {
-    href: "/pengaturan",
-    label: "Pengaturan",
-    icon: <SettingsIcon className="size-[18px]" {...ic} />,
   },
   { href: "/panduan", label: "Panduan", icon: <HelpCircleIcon className="size-[18px]" {...ic} /> },
 ];
@@ -77,11 +72,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <nav aria-label="Navigasi utama" className="flex-1 overflow-y-auto py-3">
           <ul>
             {SIDE.map((n) => (
-              <li key={n.href}>
-                <NavLink href={n.href} icon={n.icon} variant="side">
-                  {n.label}
-                </NavLink>
-              </li>
+              <Fragment key={n.href}>
+                {n.href === "/panduan" && (
+                  <Suspense fallback={null}>
+                    <AdminNavItem />
+                  </Suspense>
+                )}
+                <li>
+                  <NavLink href={n.href} icon={n.icon} variant="side">
+                    {n.label}
+                  </NavLink>
+                </li>
+              </Fragment>
             ))}
           </ul>
         </nav>

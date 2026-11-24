@@ -346,7 +346,8 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
 | 5 — Dashboard + RPC summary | ✅ selesai (23 Nov 2026): review visual opus tanpa P0, semua P1 diperbaiki |
 | 6 — Aset, penilaian, monitoring, jadwal | ✅ selesai (23 Nov 2026): review keamanan & visual opus tanpa P0, semua P1 diperbaiki |
 | 7 — Import/export Excel | ✅ selesai (23 Nov 2026): review keamanan & visual opus tanpa P0, 4 P1 + 10 P2 diperbaiki |
-| 8 — Pengaturan | ⏭ berikutnya: jalankan `/fase-8` di sesi baru |
+| 8 — Pengaturan | ✅ selesai (23 Nov 2026): allowlist & peran, parameter berversi (draf → pratinjau dampak → aktivasi, hitung ulang terpisah), rubrik, alias, koreksi massal "perlu review"; review keamanan & visual opus tanpa P0/P1 terbuka |
+| 9 — Hardening: security review, a11y audit, Lighthouse, Playwright e2e | ⏭ berikutnya: jalankan `/fase-9` di sesi baru |
 
 ### Hasil Fase 0
 - `DESIGN.md` final: token light/dark lolos validator palet `dataviz` (exit 0 kedua mode) dan 116/116 pasangan kontras AA; §12 berisi keputusan dari kritik prototipe.
@@ -554,3 +555,37 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
   - Editor bisa membedakan "batch tidak ada" dari "bukan milik Anda".
   - `fetchAll` dibatasi 20.000 baris (`ponytail:`).
   - P2 Fase 5/6 lain (jadwal "Tak terjadwal", view `current_date`, warning prerender `Date.now()`, dsb.) masih terbuka.
+
+
+### Hasil Fase 8
+- **Keputusan user (23 Nov 2026):**
+  - Aktivasi versi **terpisah** dari hitung ulang (hitung ulang tetap eksplisit, dengan pratinjau).
+  - Versi baru = **draf salinan versi aktif** yang bisa diubah/dihapus; versi yang pernah aktif atau dipakai penilaian **terkunci**.
+  - Koreksi massal "perlu review" = tetapkan status baru **atau** konfirmasi apa adanya; `utilization_raw` dipertahankan, perubahan diaudit.
+- **Migrasi baru (hanya menambah):** `20261123000700_settings.sql`.
+  - Kolom `scoring_params.activated_at`.
+  - RPC: `create_params_draft`, `save_params_draft` (atomik), `activate_params_version` (atomik, tanpa recalc), `preview_params_impact` (matriks dari→ke + belum dinilai), `resolve_utilization_review` (≤ 5.000 aset), `scoring_params_is_locked`.
+  - Trigger `allowed_emails_aa_guard`: normalisasi email, tidak bisa mencabut/menurunkan diri sendiri, minimal 1 admin (advisory lock).
+  - Trigger `scoring_params_aa_guard` (pesan validasi ramah, rubrik 30/30 sebelum aktivasi, kunci versi), `score_criteria_aa_guard`, constraint trigger *deferred* satu versi aktif, `assessments_ab_params_guard` (hanya versi yang pernah aktif; ubah versi hanya ke versi aktif dan hanya penilaian terakhir).
+  - Audit untuk `allowed_emails`, `score_criteria`, alias; normalisasi alias.
+  - Allowlist & alias = DML langsung + RLS admin. Tidak ada pembuatan user auth (`auth.admin.createUser` tidak dipakai).
+- **TS:**
+  - `lib/schemas/settings.ts`: bobot % → fraksi lewat integer 0,01% sehingga Σ = 1 persis.
+  - `lib/actions/settings.ts`: 15 action, semuanya lewat `requireRole("admin")`; errcode → pesan Indonesia.
+  - `lib/settings/{types,load}.ts`.
+  - UI `app/(app)/pengaturan/*`: tab `?tab=pengguna|parameter|rubrik|alias|review&versi=N`.
+  - `components/shell/AdminNavItem.tsx`: link Pengaturan hanya untuk admin.
+- **Review keamanan (opus):** 0 P0/P1. 3 P2 diperbaiki: versi draf dipakai penilaian / ubah versi penilaian lama, insert rubrik ke versi terkunci, simpan draf tidak atomik.
+- **Review visual (opus):** 0 P0. 6 P1 diperbaiki: pratinjau basi (Aktifkan dinonaktifkan saat draf belum disimpan), tab mobile tersembunyi (flex-wrap), hapus alias tanpa Urungkan, konfirmasi massal tanpa dialog, bar aksi mobile (hanya saat ada pilihan), kolom review. P2 diperbaiki: `aria-describedby`, fokus ringkasan error, warna total, heading, rubrik `dl`, key Suspense, copy "Tutup"/"Tetapkan status", Urungkan ubah peran.
+- **Test:** pgTAP 262 (13 file), Vitest 165 (19 file), e2e 100 lolos + 12 skip (skenario tulis hanya desktop) — `e2e/pengaturan.spec.ts`: editor/viewer ditolak & tanpa link, admin tambah/ubah/cabut pengguna (diri sendiri terlindungi), draf → bobot → pratinjau → aktivasi (skor lama tetap), alias baru dipakai impor, konfirmasi massal, 5 tab × 1440/375 × terang/gelap. Screenshot `docs/screenshots/fase-8/`.
+  - e2e memulihkan parameter lewat `psql` superuser lokal (`session_replication_role=replica`) — **hanya untuk DB lokal**. State akhir: versi aktif 1, 136 aset, 123 perlu review.
+- **Gate:** `db reset`, test db 262, db lint, typecheck, lint, test 165, contrast 104/104, build, e2e 100/100 hijau.
+- **Ponytail / P2 terbuka:**
+  - `methods` per kategori belum bisa diedit di UI.
+  - Daftar dampak dibatasi 200 baris; daftar review menampilkan 500 baris pertama; select native.
+  - Normalisasi alias ganda JS/PG bisa berbeda untuk karakter non-ASCII (hapus alias memakai nilai DB).
+  - `serverActions.bodySizeLimit = "4mb"` berlaku untuk semua action.
+  - Sonner: timer tidak jeda saat toast mendapat fokus keyboard.
+  - Belum diuji e2e: terapkan hitung ulang, tetapkan status, alias pemanfaatan, edit rubrik, hapus draf.
+  - Dari Fase 5–7: batch impor tertinggal `validated` bila RPC gagal; `rows_*` dari klien; jadwal "Tak terjadwal" ±134 baris; view/RPC `current_date` (UTC); warning prerender `Date.now()` (auth-js `_loadSession`); galat ganda tanpa h1; `RightTimeline` tanpa `role=region`; `TopValue` dua link; "Ditambah 0"; basis 136; tabel `/aset` RiskBadge `md` + scroller bersarang; UI buat/ubah aset belum ada.
+- **Menunggu keputusan user:** keputusan terbuka Fase 7 (editor mengoreksi penilaian lama lewat impor; skor 4–5 tanpa catatan = peringatan; viewer boleh ekspor; CSV `;`) tetap belum diputuskan — tidak tersentuh di Fase 8.

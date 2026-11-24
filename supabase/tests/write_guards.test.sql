@@ -36,9 +36,10 @@ select throws_ok($$update public.assets set notes = repeat('x', 4001) where asse
   '23514', null, 'catatan aset > 4000 karakter ditolak');
 
 set local request.jwt.claims = '{"email":"guard-a@uji.test","sub":"aaaaaaaa-0000-0000-0000-000000000009","role":"authenticated"}';
-insert into public.assessments (asset_id, assessed_at, params_version, s_legal, s_control, s_physical, s_utilization, s_location, s_strategic)
-select id, public.today_wib(), 99, 1, 5, 5, 5, 5, 5 from public.assets where asset_code = 'GUARD-1';
-select is((select count(*)::int from public.assessments where params_version = 99), 1, 'admin boleh memilih versi');
+-- Versi 99 belum pernah aktif (draf) → ditolak juga untuk admin (Fase 8 P2-1); versi lama yang pernah aktif boleh (settings.test).
+select throws_ok($$insert into public.assessments (asset_id, assessed_at, params_version, s_legal, s_control, s_physical, s_utilization, s_location, s_strategic)
+  select id, public.today_wib(), 99, 1, 5, 5, 5, 5, 5 from public.assets where asset_code = 'GUARD-1'$$,
+  '23514', null, 'admin tidak boleh memilih versi draf');
 
 select * from finish();
 rollback;

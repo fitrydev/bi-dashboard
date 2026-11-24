@@ -257,14 +257,14 @@ isOneToOne: false
                   ]
                 },"scoring_params": {
                   Row: {
-                    "approved_by": string | null,"created_at": string,"created_by": string | null,"effective_from": string,"indicator_labels": NonNullable<Json>,"intervals": NonNullable<Json>,"is_active": boolean,"methods": NonNullable<Json>,"notes": string | null,"thresholds": NonNullable<Json>,"version": number,"weights": NonNullable<Json>
+                    "activated_at": string | null,"approved_by": string | null,"created_at": string,"created_by": string | null,"effective_from": string,"indicator_labels": NonNullable<Json>,"intervals": NonNullable<Json>,"is_active": boolean,"methods": NonNullable<Json>,"notes": string | null,"thresholds": NonNullable<Json>,"version": number,"weights": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "approved_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"effective_from"?: string,"indicator_labels"?: NonNullable<Json>,"intervals": NonNullable<Json>,"is_active"?: boolean,"methods"?: NonNullable<Json>,"notes"?: string | null,"thresholds": NonNullable<Json>,"version": number,"weights": NonNullable<Json>
+                    "activated_at"?: string | null,"approved_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"effective_from"?: string,"indicator_labels"?: NonNullable<Json>,"intervals": NonNullable<Json>,"is_active"?: boolean,"methods"?: NonNullable<Json>,"notes"?: string | null,"thresholds": NonNullable<Json>,"version": number,"weights": NonNullable<Json>
                   }
                   Update: {
-                    "approved_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"effective_from"?: string,"indicator_labels"?: NonNullable<Json>,"intervals"?: NonNullable<Json>,"is_active"?: boolean,"methods"?: NonNullable<Json>,"notes"?: string | null,"thresholds"?: NonNullable<Json>,"version"?: number,"weights"?: NonNullable<Json>
+                    "activated_at"?: string | null,"approved_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"effective_from"?: string,"indicator_labels"?: NonNullable<Json>,"intervals"?: NonNullable<Json>,"is_active"?: boolean,"methods"?: NonNullable<Json>,"notes"?: string | null,"thresholds"?: NonNullable<Json>,"version"?: number,"weights"?: NonNullable<Json>
                   }
                   Relationships: [
                     
@@ -317,7 +317,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "active_params_version":
+            "activate_params_version":
+{ Args: { "p_effective_from"?: string,"p_version": number }; Returns: Json
+                           },
+"active_params_version":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "category_for":
@@ -325,6 +328,9 @@ isOneToOne: false
                            },
 "compute_score":
 { Args: { "p_scores": (number)[],"p_version": number }; Returns: number
+                           },
+"create_params_draft":
+{ Args: { "p_notes"?: string }; Returns: number
                            },
 "current_app_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["app_role"]
@@ -347,8 +353,23 @@ isOneToOne: false
 "is_allowed":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"preview_params_impact":
+{ Args: { "p_version": number }; Returns: Json
+                           },
 "recalculate_with_active_params":
 { Args: { "dry_run"?: boolean }; Returns: Json
+                           },
+"resolve_utilization_review":
+{ Args: { "asset_ids": (string)[],"new_status"?: Database["public"]['Enums']["utilization_status"] }; Returns: number
+                           },
+"save_params_draft":
+{ Args: { "p_criteria"?: Json,"p_params"?: Json,"p_version": number }; Returns: number
+                           },
+"scoring_params_is_locked":
+{ Args: { "p_version": number }; Returns: boolean
+                           },
+"scoring_params_validate":
+{ Args: { "p_intervals": Json,"p_thresholds": Json,"p_weights": Json }; Returns: undefined
                            },
 "today_wib":
 { Args: { "p_at"?: string }; Returns: string
