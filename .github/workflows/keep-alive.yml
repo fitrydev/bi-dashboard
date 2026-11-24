@@ -1,0 +1,19 @@
+# Anti-pause Supabase Free (§9.6): ping harian ke Auth API project produksi.
+# ponytail: hanya health check Auth (tanpa query data). Bila project tetap di-pause,
+# ganti dengan query ringan via PostgREST atau upgrade ke Pro.
+name: keep-alive
+on:
+  schedule:
+    - cron: "17 2 * * *" # 09:17 WIB
+  workflow_dispatch:
+permissions: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping Supabase
+        env:
+          URL: ${{ vars.SUPABASE_URL }}
+          KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: curl -fsS --max-time 30 "$URL/auth/v1/health" -H "apikey: $KEY"

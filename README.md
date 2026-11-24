@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# bi-dashboard — Risk-Based Asset Monitoring 2027
 
-## Getting Started
+Pengganti Excel `source/Template_Matriks_Risiko_Monitoring_Aset_2027.xlsx`. Stack: Next.js 16, Supabase (Postgres + Auth Google + allowlist), Vercel. Rencana: `docs/PLAN.md`.
 
-First, run the development server:
+## Setup lokal
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+colima start                       # Docker runtime
+bun install
+bunx supabase start                # migrasi + seed (136 aset, admin@example.com)
+bunx supabase status -o env        # salin API_URL / PUBLISHABLE_KEY / SECRET_KEY ke .env.local (lihat .env.example)
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Google OAuth lokal (opsional): isi `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID/SECRET` di env sebelum `supabase start`, redirect URI `http://127.0.0.1:54321/auth/v1/callback`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Gate (wajib hijau sebelum push)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bunx supabase db reset && bunx supabase test db && bunx supabase db lint
+bun run typecheck && bun run lint && bun run test
+bun scripts/check-contrast.ts && bun run build && bun run test:e2e
+```
 
-## Learn More
+## Produksi
 
-To learn more about Next.js, take a look at the following resources:
+| | |
+|---|---|
+| DB/Auth | Supabase Free, `ap-southeast-1` |
+| App | Vercel Hobby, fungsi `sin1`, deploy otomatis dari `main` (integrasi GitHub) |
+| Env Vercel | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` saja. App tidak butuh secret key. CSP `connect-src` dibaca dari URL ini saat build: ganti URL → redeploy. |
+| Anti-pause | `.github/workflows/keep-alive.yml` harian (repo vars `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Migrasi baru
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Skema hanya maju: buat file baru di `supabase/migrations/`, lulus gate, lalu
 
-## Deploy on Vercel
+```bash
+bunx supabase db push --linked --dry-run   # cek
+bunx supabase db push --linked
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Tidak ada migrasi turun. Rollback DB = migrasi maju yang membalik perubahan. `config.toml` **tidak** ikut ter-push; setelan Auth hosted diatur di dashboard (bawah).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Setelan Auth hosted (manual, dashboard Supabase)
+
+- Providers: hanya **Google** aktif (Client ID/secret dari Google Cloud, redirect `https://<ref>.supabase.co/auth/v1/callback`). Email, Phone, Anonymous **mati**.
+- Email provider (walau mati): Confirm email + Secure email change **aktif**.
+- Auth Hooks → Before User Created → Postgres `public.hook_before_user_created`.
+- URL Configuration: Site URL `https://<app>.vercel.app`, Redirect URLs `https://<app>.vercel.app/auth/callback`.
+- Sessions: JWT expiry 3600, refresh token rotation aktif.
+- Advisors → Security & Performance: 0 error.
+
+### Tambah / ganti admin
+
+Lewat app: `/pengaturan` → Allowlist (admin). Darurat (tidak ada admin yang bisa login), SQL Editor:
+
+```sql
+insert into public.allowed_emails (email, role) values ('nama@domain.com', 'admin')
+on conflict (email) do update set role = 'admin';
+```
+
+### Rotasi kunci
+
+1. Supabase → Project Settings → API Keys: buat publishable key baru.
+2. Vercel → Env `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ganti → Redeploy. Perbarui repo var GitHub.
+3. Hapus key lama. Secret key dan Google client secret: rotasi di dashboard masing-masing (app tidak memakainya).
+
+### Rollback deploy
+
+Vercel → Deployments → deploy sebelumnya → **Instant Rollback**. DB tidak ikut mundur; pastikan deploy lama kompatibel dengan skema (migrasi dibuat aditif).
+
+### Backup
+
+Free tanpa PITR: ekspor Excel penuh dari `/aset` secara berkala, atau `bunx supabase db dump --linked -f backup.sql` (data: `--data-only`).
