@@ -15,7 +15,6 @@ const AUTH = [
   "/import",
   "/panduan",
   ...["pengguna", "parameter", "rubrik", "alias", "review"].map((t) => `/pengaturan?tab=${t}`),
-  "/design",
 ];
 
 for (const scheme of ["light", "dark"] as const)

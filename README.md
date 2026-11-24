@@ -7,8 +7,9 @@ Pengganti Excel `source/Template_Matriks_Risiko_Monitoring_Aset_2027.xlsx`. Stac
 ```bash
 colima start                       # Docker runtime
 bun install
-# data asli TIDAK ada di repo: taruh Excel di source/, lalu
-bun run db:seed-gen                # → supabase/seed.sql (gitignored)
+# data asli TIDAK ada di repo: salin dari pemilik data design/data/assets.json
+# (ekstraksi Excel Fase 0; skrip ekstraksinya tidak ada di repo), lalu
+bun run db:seed-gen                # assets.json → supabase/seed.sql (gitignored)
 bunx supabase start                # migrasi + seed (136 aset, admin@example.com)
 bunx supabase status -o env        # salin API_URL / PUBLISHABLE_KEY / SECRET_KEY ke .env.local (lihat .env.example)
 bun dev
@@ -17,6 +18,8 @@ bun dev
 Google OAuth lokal (opsional): isi `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID/SECRET` di env sebelum `supabase start`, redirect URI `http://127.0.0.1:54321/auth/v1/callback`.
 
 ## Gate (wajib hijau sebelum push)
+
+Butuh data lokal: tanpa `supabase/seed.sql` (dan `source/*.xlsx` untuk `e2e/import.spec.ts`), `test db` dan e2e gagal karena mengharapkan 136 aset dan admin `admin@example.com`. Typecheck, lint, test, contrast, dan build tetap jalan di clone bersih.
 
 ```bash
 bunx supabase db reset && bunx supabase test db && bunx supabase db lint

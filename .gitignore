@@ -42,3 +42,4 @@ source/*.xlsx
 supabase/seed.sql
 design/data/
 docs/screenshots/
+design/screenshots/
