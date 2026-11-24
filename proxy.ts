@@ -9,8 +9,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Cocokkan semua path kecuali aset statis dan optimasi gambar.
+     * Semua path lewat proxy kecuali bundle Next dan favicon. Tidak ada
+     * pengecualian per ekstensi: path "*.png" dsb. tetap butuh sesi.
      */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico$).*)",
   ],
 };

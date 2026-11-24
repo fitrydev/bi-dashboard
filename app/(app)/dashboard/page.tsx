@@ -2,18 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense, cache, type ReactNode } from "react";
 import { ArrowRight, Hourglass, TriangleAlert } from "lucide-react";
-import {
-  CategoryValue,
-  ChartEmpty,
-  ChartSkeleton,
-  CoverageBar,
-  Heatmap,
-  RegionTable,
-  RightTimeline,
-  Schedule,
-  Sparkline,
-  TopValue,
-} from "@/components/charts";
+import { ChartEmpty } from "@/components/charts/ChartEmpty";
+import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
+import { CoverageBar } from "@/components/charts/CoverageBar";
+import { Heatmap } from "@/components/charts/Heatmap";
+import { RegionTable } from "@/components/charts/RegionTable";
+import { RightTimeline } from "@/components/charts/RightTimeline";
+import { Schedule } from "@/components/charts/Schedule";
+import { Sparkline } from "@/components/charts/Sparkline";
+import { TopValue } from "@/components/charts/TopValue";
 import { ChartFrame } from "@/components/ledger/ChartFrame";
 import { EmptyState } from "@/components/ledger/EmptyState";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
@@ -42,7 +39,7 @@ import {
 import { asetDetail, asetList } from "@/lib/routes";
 import { DEFAULT_PARAMS, RISK_LABEL, type WarnKey } from "@/lib/scoring";
 import { SectionBoundary } from "@/components/ledger/SectionBoundary";
-import { FilterBar, ShareChart } from "./client";
+import { CategoryValueLazy, FilterBar, ShareChart } from "./client";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -62,17 +59,13 @@ export default function DashboardPage(props: PageProps<"/dashboard">) {
   return (
     <>
       <UnassessedPattern />
-      <SectionBoundary what="Ringkasan dashboard">
+      <SectionBoundary what="Dashboard" h1="Dashboard">
         <Suspense fallback={<HeaderSkeleton />}>
           <Header sp={props.searchParams} />
         </Suspense>
-      </SectionBoundary>
-      <SectionBoundary what="Daftar filter">
         <Suspense fallback={<Skeleton className="mt-4 h-11 w-full bg-rule/60" />}>
           <Filters />
         </Suspense>
-      </SectionBoundary>
-      <SectionBoundary what="Data dashboard">
         <Suspense fallback={<BodySkeleton />}>
           <Body sp={props.searchParams} />
         </Suspense>
@@ -240,7 +233,7 @@ function Kpis({ d }: { d: DashboardData }) {
         alert={risk_findings.right_expired > 0}
         label="Hak tanah lewat"
         value={formatAngka(risk_findings.right_expired)}
-        note={`Ditambah ${formatAngka(risk_findings.right_expiring_12m)} berakhir < 12 bulan`}
+        note={risk_findings.right_expiring_12m ? `Ditambah ${formatAngka(risk_findings.right_expiring_12m)} berakhir < 12 bulan` : "Tidak ada yang berakhir < 12 bulan"}
         to={asetList({ warn: "hak-kedaluwarsa" })}
       />
       <Kpi
@@ -284,7 +277,7 @@ function Coverage({ d, first }: { d: DashboardData; first?: boolean }) {
             {formatAngka(assessed)} / {formatAngka(target)}
           </span>
         </div>
-        <CoverageBar rows={d.rows} />
+        <CoverageBar rows={d.rows} target={COVERAGE_TARGET} />
         {trendNote(d) && <p className="mt-2 text-label text-ink-subtle">{trendNote(d)}</p>}
       </div>
     </Section>
@@ -503,7 +496,7 @@ function Exposure({ d }: { d: DashboardData }) {
         <>
           <TopValue rows={d.rows} />
           <h3 className="mt-8 mb-2 text-label font-medium text-ink">Jumlah aset dan nilai buku per kategori</h3>
-          <CategoryValue rows={d.rows} countTicks={niceTicks(max)} valueTicks={niceTicks(maxV)} />
+          <CategoryValueLazy rows={d.rows} countTicks={niceTicks(max)} valueTicks={niceTicks(maxV)} />
         </>
       )}
     </Section>

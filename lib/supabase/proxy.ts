@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import type { Database } from "@/lib/supabase/database.types";
+import { cookieOptions } from "@/lib/supabase/cookie-options";
 
 /**
  * Me-refresh sesi Supabase di setiap request yang lolos matcher proxy.ts.
@@ -19,6 +20,7 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(env.url, env.key, {
+    cookieOptions,
     cookies: {
       getAll() {
         return request.cookies.getAll();

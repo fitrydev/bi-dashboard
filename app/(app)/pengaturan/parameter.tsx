@@ -134,7 +134,7 @@ function ReadOnly({ v }: { v: ParamsVersion }) {
       <p className="max-w-[68ch] text-body text-ink-muted">
         {v.is_active ? "Versi aktif tidak dapat diubah." : "Versi ini pernah aktif atau dipakai penilaian, jadi terkunci."} Untuk mengubah angka, buat draf baru.
       </p>
-      <dl className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
+      <div className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
         <Block title="Bobot indikator">
           {INDICATORS.map((k) => (
             <Row key={k} label={SHORT_LABEL[k]} value={`${pctStr(v.weights[k] ?? 0)}%`} />
@@ -152,14 +152,14 @@ function ReadOnly({ v }: { v: ParamsVersion }) {
             ))}
           </Block>
         </div>
-      </dl>
+      </div>
     </div>
   );
 }
 const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
     <h4 className="mb-1 text-label font-medium text-ink">{title}</h4>
-    <div className="divide-y divide-rule border-y border-rule">{children}</div>
+    <dl className="divide-y divide-rule border-y border-rule">{children}</dl>
   </div>
 );
 const Row = ({ label, value }: { label: string; value: string }) => (

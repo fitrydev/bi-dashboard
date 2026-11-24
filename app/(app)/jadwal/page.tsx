@@ -165,11 +165,25 @@ function Daftar({ items }: { items: JadwalItem[] }) {
               </Link>
             </p>
           )}
-          <ul className="mt-3 border-t border-rule">
-            {g[k].map((i) => (
-              <Row key={i.code} i={i} />
-            ))}
-          </ul>
+          {k === "tak_terjadwal" ? (
+            // Isinya seragam (belum dinilai, tanpa jadwal): lipat agar tidak menenggelamkan grup lain.
+            <details className="mt-3">
+              <summary className="inline-flex min-h-11 cursor-pointer items-center text-body text-ink lg:min-h-9">
+                Tampilkan {formatAngka(g[k].length)} aset
+              </summary>
+              <ul className="mt-2 border-t border-rule">
+                {g[k].map((i) => (
+                  <Row key={i.code} i={i} />
+                ))}
+              </ul>
+            </details>
+          ) : (
+            <ul className="mt-3 border-t border-rule">
+              {g[k].map((i) => (
+                <Row key={i.code} i={i} />
+              ))}
+            </ul>
+          )}
         </section>
       ))}
     </>
@@ -182,16 +196,23 @@ function Kalender({ items, p, today }: { items: JadwalItem[]; p: Params; today: 
   const label = formatBulan(new Date(`${p.bulan}-01T00:00:00Z`));
   const total = [...map.values()].reduce((a, l) => a + l.length, 0);
   const nav = (n: number, text: string) => (
-    <Link href={q(p, { bulan: shiftBulan(p.bulan, n) })} className="link inline-flex min-h-11 items-center lg:min-h-0">
-      {text}
+    <Link
+      href={q(p, { bulan: shiftBulan(p.bulan, n) })}
+      aria-label={n < 0 ? "Bulan sebelumnya" : "Bulan berikutnya"}
+      className="link inline-flex min-h-11 shrink-0 items-center whitespace-nowrap lg:min-h-0"
+    >
+      {n < 0 ? "← " : ""}
+      <span className="sm:hidden">{n < 0 ? "Sebelumnya" : "Berikutnya"}</span>
+      <span className="hidden sm:inline">{text}</span>
+      {n > 0 ? " →" : ""}
     </Link>
   );
   return (
     <section className="mt-6" aria-label={`Kalender ${label}`}>
       <div className="flex items-center justify-between gap-4">
-        {nav(-1, "← Bulan sebelumnya")}
-        <h2 className="text-title text-ink">{label}</h2>
-        {nav(1, "Bulan berikutnya →")}
+        {nav(-1, "Bulan sebelumnya")}
+        <h2 className="text-center text-title text-ink">{label}</h2>
+        {nav(1, "Bulan berikutnya")}
       </div>
       {total === 0 && <p className="mt-4 text-body text-ink-muted">Tidak ada aset jatuh tempo pada bulan ini.</p>}
       {/* desktop: tabel Senin-Minggu */}

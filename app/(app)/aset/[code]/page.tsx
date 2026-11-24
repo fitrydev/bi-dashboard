@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, cache, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
-import { Sparkline } from "@/components/charts";
+import { Sparkline } from "@/components/charts/Sparkline";
 import { EmptyState } from "@/components/ledger/EmptyState";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
 import { PageHeader } from "@/components/ledger/PageHeader";
@@ -28,7 +28,7 @@ const METODE = { site_visit: "Kunjungan lapangan", remote: "Jarak jauh", desk_re
 
 function Scroll({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div role="region" tabIndex={0} aria-label={label} className="overflow-x-auto">
+    <div role="region" aria-label={label} className="overflow-x-auto">
       {children}
     </div>
   );

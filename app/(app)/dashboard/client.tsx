@@ -2,12 +2,21 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { StackedShare } from "@/components/charts";
+import dynamic from "next/dynamic";
+import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
+import { StackedShare } from "@/components/charts/StackedShare";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatWilayah } from "@/lib/format";
 import { LEVELS, RISK_LABEL } from "@/lib/scoring";
 import type { AssetRow } from "@/lib/types";
+
+// Recharts (~110 KB gz) dimuat di klien setelah hidrasi; section ini di bawah lipatan.
+// ponytail: SSR dimatikan (chart + tabel alternatif muncul setelah chunk datang); balik ke impor biasa bila perlu no-JS.
+export const CategoryValueLazy = dynamic(
+  () => import("@/components/charts/CategoryValue").then((m) => m.CategoryValue),
+  { ssr: false, loading: () => <ChartSkeleton height={300} /> },
+);
 
 /** StackedShare butuh state toggle (fungsi tidak bisa dikirim dari server). */
 export function ShareChart({ rows }: { rows: AssetRow[] }) {

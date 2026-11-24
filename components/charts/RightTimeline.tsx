@@ -68,7 +68,12 @@ export function RightTimeline({ rows, today }: { rows: AssetRow[]; today: Date }
   );
   const ticks = Array.from({ length: (Y1 - Y0) / 4 + 1 }, (_, i) => Y0 + i * 4);
   const chart = (
-    <div className="overflow-x-auto">
+    <div
+      role="region"
+      aria-label="Linimasa masa berlaku hak, dapat digulir"
+      tabIndex={0}
+      className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
       <div
         className="relative min-w-[680px]"
         style={{ height: H }}

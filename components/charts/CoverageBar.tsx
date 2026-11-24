@@ -5,7 +5,16 @@ import { riskVar } from "@/lib/risk";
 import { LEVELS, RISK_LABEL } from "@/lib/scoring";
 import type { AssetRow } from "@/lib/types";
 
-export function CoverageBar({ rows, thin = false }: { rows: AssetRow[]; thin?: boolean }) {
+export function CoverageBar({
+  rows,
+  thin = false,
+  target,
+}: {
+  rows: AssetRow[];
+  thin?: boolean;
+  /** Fraksi ambang (mis. 0,2): garis penanda di bar berbasis seluruh aset. */
+  target?: number;
+}) {
   const total = rows.length;
   if (total === 0) return null;
   const n = (l: (typeof LEVELS)[number]) => countBy(rows, l);
@@ -14,7 +23,11 @@ export function CoverageBar({ rows, thin = false }: { rows: AssetRow[]; thin?: b
   const label = `Cakupan penilaian: ${dinilai} dari ${total} aset dinilai; ${segs.map((l) => `${RISK_LABEL[l]} ${n(l)}`).join(", ")}; belum dinilai ${total - dinilai}.`;
   return (
     <div>
-      <div role="img" aria-label={label} className={`flex w-full gap-0.5 ${thin ? "h-2" : "h-4"}`}>
+      <div
+        role="img"
+        aria-label={target ? `${label} Ambang ${formatPersen(target)}.` : label}
+        className={`relative flex w-full gap-0.5 ${thin ? "h-2" : "h-4"}`}
+      >
         {segs.map((l) => (
           <div
             key={l}
@@ -27,6 +40,14 @@ export function CoverageBar({ rows, thin = false }: { rows: AssetRow[]; thin?: b
           />
         ))}
         <div className="hatch-unrated min-w-0 flex-1" />
+        {target && (
+          <div
+            aria-hidden="true"
+            className="absolute -inset-y-1 w-0.5 bg-ink"
+            style={{ left: `${target * 100}%` }}
+            title={`Ambang ${formatPersen(target)}`}
+          />
+        )}
       </div>
       {!thin && (
         <>

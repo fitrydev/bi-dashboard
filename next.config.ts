@@ -20,8 +20,11 @@ function buildCsp(): string {
 
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
-    // TODO Fase 9: evaluasi CSP berbasis nonce. Inline script dari next-themes
-    // masih butuh 'unsafe-inline' sekarang.
+    // ponytail: tetap 'unsafe-inline' (dievaluasi Fase 9). Nonce mewajibkan render dinamis
+    // dan tidak kompatibel dengan cacheComponents/PPR (docs Next 16 CSP guide); SRI tidak
+    // mencakup inline RSC payload + skrip next-themes. Mitigasi: tanpa dangerouslySetInnerHTML
+    // data user, React escape, object-src/base-uri/frame-ancestors ketat. Naikkan ke nonce
+    // bila PPR dilepas atau Next mendukung hash inline otomatis.
     "script-src": ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": ["'self'", "data:", "blob:"],
@@ -45,7 +48,7 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: buildCsp() },
   {
     key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
+    value: "max-age=63072000; includeSubDomains",
   },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },

@@ -354,7 +354,7 @@ function Table({
       nilai: { id: "nilai", sk: "nilai", header: "Nilai buku", cls: num, cell: (c) => <Nilai r={c.row.original} /> },
       kategori: {
         id: "kategori", sk: "kategori", header: "Kategori",
-        cell: (c) => <RiskBadge level={c.row.original.level} override={c.row.original.assessment?.critical_override} />,
+        cell: (c) => <RiskBadge level={c.row.original.level} override={c.row.original.assessment?.critical_override} size="sm" />,
       },
       skor: {
         id: "skor", sk: "skor", header: "Skor", cls: num,

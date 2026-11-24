@@ -8,10 +8,36 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect } from "react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
+
+  // DESIGN §6.10: jeda saat fokus. Sonner hanya menjeda saat hover/Alt+T (state `expanded`),
+  // bukan saat toast dicapai lewat Tab. ponytail: pinjam handler mouse sonner dengan event
+  // sintetis (React menurunkan onMouseMove/onMouseLeave dari mousemove/mouseout); ganti bila
+  // sonner punya API pause.
+  useEffect(() => {
+    const list = (t: EventTarget | null) =>
+      t instanceof Element ? t.closest("[data-sonner-toaster]") : null;
+    const onIn = (e: FocusEvent) => {
+      list(e.target)?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+    };
+    const onOut = (e: FocusEvent) => {
+      const from = list(e.target);
+      if (from && !from.contains(e.relatedTarget as Node | null))
+        from.dispatchEvent(
+          new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }),
+        );
+    };
+    document.addEventListener("focusin", onIn);
+    document.addEventListener("focusout", onOut);
+    return () => {
+      document.removeEventListener("focusin", onIn);
+      document.removeEventListener("focusout", onOut);
+    };
+  }, []);
 
   return (
     <Sonner

@@ -22,7 +22,7 @@ export async function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="Menu pengguna"
+        aria-label={`Menu pengguna, ${nama}`}
         className="flex min-h-9 max-w-40 items-center gap-2 px-2 text-label text-ink-muted hover:text-ink"
       >
         <UserIcon className="size-4 shrink-0" aria-hidden strokeWidth={1.5} />

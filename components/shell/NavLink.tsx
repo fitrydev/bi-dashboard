@@ -28,6 +28,8 @@ function NavLinkView({ href, icon, children, variant, active }: Props & { active
   return (
     <Link
       href={href}
+      // /import menarik SheetJS (±120 KB gz): jangan prefetch di viewport, cukup saat hover/tap.
+      prefetch={href === "/import" ? false : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",

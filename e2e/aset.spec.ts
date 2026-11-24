@@ -205,3 +205,18 @@ test("8. kode tak dikenal menampilkan UI tidak ditemukan", async ({ page, contex
   await page.goto("/aset/__none__"); // soft 404: status 200 diterima
   await expect(page.getByText(/tidak ditemukan/i).first()).toBeVisible();
 });
+
+test("10. toast Urungkan tetap tampil saat difokus (> 8 dtk)", async ({ page, context, baseURL }, info) => {
+  desktopOnly(info);
+  await loginAs(context, EDITOR, baseURL!);
+  const code = await unrated(page, 1);
+  const row = page.locator("tbody tr").filter({ has: page.locator(`[data-del="${code}"]`) });
+  await row.locator(`[data-del="${code}"]`).click();
+  await expect(row).toHaveCount(0);
+  const undo = page.getByRole("button", { name: "Urungkan" });
+  await undo.focus();
+  await page.waitForTimeout(9_500);
+  await expect(undo).toBeVisible();
+  await undo.click();
+  await expect(row).toHaveCount(1);
+});

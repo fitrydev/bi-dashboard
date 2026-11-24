@@ -347,7 +347,8 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
 | 6 — Aset, penilaian, monitoring, jadwal | ✅ selesai (23 Nov 2026): review keamanan & visual opus tanpa P0, semua P1 diperbaiki |
 | 7 — Import/export Excel | ✅ selesai (23 Nov 2026): review keamanan & visual opus tanpa P0, 4 P1 + 10 P2 diperbaiki |
 | 8 — Pengaturan | ✅ selesai (23 Nov 2026): allowlist & peran, parameter berversi (draf → pratinjau dampak → aktivasi, hitung ulang terpisah), rubrik, alias, koreksi massal "perlu review"; review keamanan & visual opus tanpa P0/P1 terbuka |
-| 9 — Hardening: security review, a11y audit, Lighthouse, Playwright e2e | ⏭ berikutnya: jalankan `/fase-9` di sesi baru |
+| 9 — Hardening: security review, a11y audit, Lighthouse, Playwright e2e | ✅ selesai (24 Nov 2026): review keamanan opus 0 P0, 1 P1 (ganti email → ambil alih allowlist) ditutup; axe 0 pelanggaran di semua halaman; JS dashboard 218 KB gz (target 150, selisih tercatat) |
+| 10 — Deploy | ⏭ berikutnya: jalankan `/fase-10` di sesi baru |
 
 ### Hasil Fase 0
 - `DESIGN.md` final: token light/dark lolos validator palet `dataviz` (exit 0 kedua mode) dan 116/116 pasangan kontras AA; §12 berisi keputusan dari kritik prototipe.
@@ -589,3 +590,28 @@ Dampaknya langsung terasa: 13 tanah idle saat ini akan tepat dinilai 3 atau 4, t
   - Belum diuji e2e: terapkan hitung ulang, tetapkan status, alias pemanfaatan, edit rubrik, hapus draf.
   - Dari Fase 5–7: batch impor tertinggal `validated` bila RPC gagal; `rows_*` dari klien; jadwal "Tak terjadwal" ±134 baris; view/RPC `current_date` (UTC); warning prerender `Date.now()` (auth-js `_loadSession`); galat ganda tanpa h1; `RightTimeline` tanpa `role=region`; `TopValue` dua link; "Ditambah 0"; basis 136; tabel `/aset` RiskBadge `md` + scroller bersarang; UI buat/ubah aset belum ada.
 - **Menunggu keputusan user:** keputusan terbuka Fase 7 (editor mengoreksi penilaian lama lewat impor; skor 4–5 tanpa catatan = peringatan; viewer boleh ekspor; CSV `;`) tetap belum diputuskan — tidak tersentuh di Fase 8.
+
+### Hasil Fase 9
+- **Review keamanan (opus):** `db lint` bersih. Terverifikasi lewat katalog: RLS aktif di 13/13 tabel, view `security_invoker`, `search_path=''` di semua fungsi, anon tanpa grant tabel/fungsi, policy memakai `(select auth.*())`, tidak ada FK tanpa index. Semua action diekspor `requireRole` sebelum zod; `safeNext` callback aman; export ternetralisasi; tanpa `dangerouslySetInnerHTML`.
+  - **P1 ditutup:** peran dicocokkan dengan `auth.jwt()->>'email'`, jadi ganti email ke entri allowlist orang lain = eskalasi. Lokal tertahan konfirmasi (`new_email`), tetapi kini juga ditolak DB: migrasi `20261124000100_hardening.sql` (trigger `auth_users_email_immutable`, login hanya Google). pgTAP `hardening.test.sql` (+ cek anon tanpa grant/execute di `public`).
+  - **P2 terbuka (dicatat):** editor bisa PATCH langsung `assets.utilization_needs_review`/`last_monitored_at` (melewati antrean review admin; tetap diaudit) → grant update per kolom; editor bisa mengubah `status`/`report` batch impor miliknya; `fail()` di `lib/actions/settings.ts` meneruskan pesan Postgres bawaan dengan errcode yang sama; hook tidak cek provider/`email_verified`; default ACL `supabase_admin` (hanya relevan bila objek dibuat lewat Studio).
+- **Header & sesi:**
+  - CSP nonce **tidak** diadopsi: nonce mewajibkan render dinamis dan tidak kompatibel dengan `cacheComponents`/PPR (Next 16 CSP guide). Tetap `'unsafe-inline'` (`ponytail:` di `next.config.ts`), mitigasi: tanpa sink XSS, `object-src`/`base-uri`/`frame-ancestors` ketat.
+  - HSTS tanpa `preload` (tidak berlaku untuk `*.vercel.app`, berisiko bila domain sendiri).
+  - Cookie sesi `Secure` di produksi (`lib/supabase/cookie-options.ts`, dipakai server/proxy/browser). HttpOnly tidak mungkin (client browser membaca sesi); opsi lanjutan: OAuth lewat route server.
+  - Matcher proxy hanya mengecualikan `_next/static`, `_next/image`, `favicon.ico`; SVG template `public/*` dihapus.
+  - Warning `blocking-prerender-current-time` (auth-js `_loadSession` → `Date.now()`) **tetap**: `await connection()` di `UserMenu`/`ensureAllowed` tidak menghilangkannya; berasal dari pustaka, tidak fatal.
+- **A11y (WCAG 2.2 AA):** `e2e/a11y.spec.ts` axe (wcag2a/aa, 21a/aa, 22aa) di 17 halaman × terang/gelap × 1440/375, **0 pelanggaran, tanpa pengecualian**. Diperbaiki: label-content-name-mismatch (UserMenu, TopValue), `dl` tidak valid (parameter), wadah tabel scroll dapat difokus (`components/ui/table.tsx`), `RightTimeline` `role=region`+`tabIndex`, `TopValue` satu tab stop per baris, dashboard galat = satu h1 + satu "Coba lagi". Toast: timer jeda saat fokus (focusin → pause sonner, `ponytail:` di `components/ui/sonner.tsx`), diuji e2e (> 8 dtk). Bar Recharts tanpa roving focus **diterima** (jalur tabel `ChartFrame` terjangkau keyboard).
+- **Performa (Pixel 7, CPU 4×, Fast 4G):** JS awal gz /dashboard 322 → **218 KB**, /aset 239 KB, /pengaturan 252 KB. LCP /dashboard ≈ 1,0 s, /aset 0,58 s, /pengaturan < 0,6 s (target 1,5 s ✅). Perbaikan: impor chart langsung (bukan barrel), `CategoryValue` lazy (`next/dynamic`, ssr:false), link /import `prefetch={false}` (SheetJS 120 KB tidak ikut di-prefetch).
+  - **Selisih:** JS dashboard 218 vs target 150 KB (react-dom 71 + framework Next 45 KB saja ±116 KB). Rencana: bundle analyzer, `dynamic` untuk Select/Sheet/Toaster, cek chunk 39 KB. INP belum diukur.
+  - `use cache` + `cacheTag` **tidak** diadopsi: data dibaca client per-user (cookie + RLS), `use cache` tidak boleh membaca `cookies()`; alternatif secret client + `requireRole` melonggarkan RLS. Tunda sampai TTFB terbukti masalah.
+- **P2 ditutup:** "Ditambah 0" → "Tidak ada yang berakhir < 12 bulan"; bar cakupan diberi penanda ambang 20% (basis 136 kini terbaca); "Tak terjadwal" dilipat (`<details>`); navigasi bulan kalender mobile ringkas; RiskBadge tabel `/aset` `sm`. Diterima: scroller `/aset` `max-h-[70vh]` (dibutuhkan virtualizer, region dapat difokus).
+- **P2 tetap terbuka:** `methods` per kategori di UI; daftar dampak 200 / review 500; normalisasi alias non-ASCII; `bodySizeLimit 4mb` global; batch impor tertinggal `validated`; `rows_*` dari klien; "batch tidak ada" vs "bukan milik Anda"; `fetchAll` 20.000; view/RPC `current_date` (UTC); UI buat/ubah aset.
+- **Test:** pgTAP 266 (14 file), Vitest 165, e2e 173 lolos + 17 skip (`a11y.spec.ts` 68; `pengaturan.spec.ts` + hitung ulang, tetapkan status, alias pemanfaatan, edit rubrik, hapus draf; `aset.spec.ts` + toast jeda fokus). State akhir: versi aktif 1, 136 aset, 123 perlu review.
+- **Gate:** `db reset`, test db 266, db lint, typecheck, lint, test 165, contrast 104/104, build, e2e hijau.
+- **Menunggu keputusan user:**
+  1. Keputusan terbuka Fase 7 (editor mengoreksi penilaian lama lewat impor; skor 4–5 tanpa catatan = peringatan; viewer boleh ekspor; CSV `;`).
+  2. Terima selisih JS dashboard 218 KB vs 150 KB, atau lanjut optimasi bundle.
+  3. P2 grant kolom `assets` untuk editor (menutup PATCH langsung `utilization_needs_review`) — sekarang atau setelah deploy.
+  4. Untuk Fase 10: kredensial Google OAuth, email admin pertama produksi, nama repo/project/domain.
+
